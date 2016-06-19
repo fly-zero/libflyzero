@@ -2,7 +2,7 @@
 
 namespace FlyZero
 {
-	template <typename ElementType, typename Less = less<ElementType>>
+	template <typename ElementType>
 	class AVL_Tree
 	{
 	public:
