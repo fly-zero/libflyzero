@@ -1,4 +1,5 @@
 #include <exception>
+#include <new>
 #include "MemPool.h"
 
 void * MemPool::alloc(size_t size)
