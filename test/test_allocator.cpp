@@ -7,7 +7,7 @@
 namespace test
 {
 
-	class A
+	class RealAllocator
 	{
 	public:
 		void * operator()(std::size_t n) const
@@ -43,7 +43,7 @@ namespace test
 	size_t A::size_allocated = 0;
 	
 	template <typename T>
-	using Allocator = flyzero::allocator<T, A, A>;
+	using Allocator = flyzero::allocator<T, RealAllocator, RealAllocator>;
 
 	using string = std::basic_string<char, std::char_traits<char>, Allocator<char> >;
 
