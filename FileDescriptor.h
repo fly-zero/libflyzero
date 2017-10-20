@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unistd.h>
+#include <fcntl.h>
 
 namespace flyzero
 {
@@ -40,6 +41,19 @@ namespace flyzero
         {
             ::close(fd_);
             fd_ = -1;
+        }
+
+        FileDescriptor Dup(void)
+        {
+            return FileDescriptor(::dup(fd_));
+        }
+
+        bool SetUnblock(void) const
+        {
+            auto ret = fcntl(fd_, F_GETFL);
+            if (ret == -1)
+                return false;
+            return fcntl(fd_, F_SETFL, ret | O_NONBLOCK) != -1;
         }
 
         bool operator!(void) const

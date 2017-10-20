@@ -14,6 +14,9 @@ namespace flyzero
         if (!sock)
             return false;
 
+        if (!sock.SetUnblock())
+            return false;
+
         sockaddr_in addr{ };
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = INADDR_ANY;
