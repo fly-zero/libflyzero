@@ -79,35 +79,7 @@ namespace flyzero
             epoll_ctl(epfd_.get(), EPOLL_CTL_ADD, fd.get(), &ev);
         }
 
-        void run(size_t size = 1024, int timeout = -1, void (*onTimeout)(void *) = nullptr, void *arg = nullptr) const
-        {
-            auto events = reinterpret_cast<epoll_event *>(alloc_(size * sizeof (epoll_event)));
-
-            for (int nev; (nev = epoll_wait(epfd_.get(), events, size, timeout)) != -1; )
-            {
-                if (nev == 0)
-                {
-                    if (onTimeout)
-                        onTimeout(arg);
-                    continue;
-                }
-
-                for (int i = 0; i < nev; ++i)
-                {
-                    IEpoll * p = static_cast<IEpoll *>(events[i].data.ptr);
-                    if (events[i].events & EPOLLIN)
-                        p->OnRead();
-
-                    if (events[i].events & EPOLLOUT)
-                        p->OnWrite();
-
-                    if (events[i].events & EPOLLRDHUP)
-                        p->OnRead();
-                }
-            }
-
-            dealloc_(events);
-        }
+        void run(size_t size, int timeout, void (*onTimeout)(void *), void *arg) const;
 
 	private:
         FileDescriptor epfd_;

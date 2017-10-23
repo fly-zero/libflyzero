@@ -20,7 +20,7 @@ namespace flyzero
         sockaddr_in addr{ };
         addr.sin_family = AF_INET;
         addr.sin_addr.s_addr = INADDR_ANY;
-        addr.sin_port = ::htons(port);
+        addr.sin_port = htons(port);
 
         if (::bind(sock.get(), reinterpret_cast<sockaddr *>(&addr), sizeof addr) == -1)
             return false;
