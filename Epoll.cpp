@@ -20,13 +20,13 @@ namespace flyzero
             {
                 IEpoll * p = static_cast<IEpoll *>(events[i].data.ptr);
                 if (events[i].events & EPOLLIN)
-                    p->OnRead();
+                    p->onRead();
 
                 if (events[i].events & EPOLLOUT)
-                    p->OnWrite();
+                    p->onWrite();
 
                 if (events[i].events & EPOLLRDHUP)
-                    p->OnRead();
+                    p->onRead();
             }
         }
 

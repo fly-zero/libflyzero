@@ -6,20 +6,30 @@
 namespace flyzero
 {
 	template <class _Type, class _Alloc, class _Dealloc>
-	struct allocator
+	class Allocator
 	{
+    public:
 		typedef _Type value_type;
 		typedef _Type * pointer;
 		typedef const _Type * const_pointer;
 		typedef _Type & reference;
 		typedef const _Type & const_reference;
 
-		explicit allocator(void) {}
+        Allocator(void) = default;
 
-		explicit allocator(const allocator & other) {}
+        Allocator(_Alloc alloc, _Dealloc dealloc)
+            : alloc_(alloc)
+            , dealloc_(dealloc)
+        {
+        }
 
-		template <class _Type1, class _Alloc1, class _Dealloc1>
-		explicit allocator(const allocator<_Type1, _Alloc1, _Dealloc1> &) {}
+        Allocator(const _Alloc & alloc, const _Dealloc & dealloc)
+            : alloc_(alloc)
+            , dealloc_(dealloc)
+        {
+        }
+
+        explicit Allocator(const Allocator &) = default;
 
 		static pointer allocate(std::size_t n)
 		{
@@ -54,5 +64,9 @@ namespace flyzero
 		{
 			p->~U();
 		}
+
+    private:
+        _Alloc alloc_;
+        _Dealloc dealloc_;
 	};
 };

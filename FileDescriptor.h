@@ -83,6 +83,11 @@ namespace flyzero
             return *this;
         }
 
+        bool operator<(const FileDescriptor & other) const
+        {
+            return fd_ < other.fd_;
+        }
+
     private:
         int fd_{ -1 };
     };

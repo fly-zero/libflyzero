@@ -5,6 +5,8 @@
 #include <utility>
 #include <cstdlib>
 #include <cstdio>
+#include <cassert>
+#include <functional>
 
 #include "FileDescriptor.h"
 
@@ -13,24 +15,29 @@ namespace flyzero
     class IEpoll
     {
     public:
-        virtual void OnRead(void) = 0;
-        virtual void OnWrite(void) = 0;
-        virtual void OnClose(void) = 0;
+        virtual void onRead(void) = 0;
+        virtual void onWrite(void) = 0;
+        virtual void onClose(void) = 0;
+        virtual int getFileDescriptor(void) const = 0;
     };
 
 	class Epoll
 	{
 	public:
-        typedef void * (*AllocFunc)(size_t);
-        typedef void (*DeallocFunc)(void *);
+        using AllocFunc = std::function<void*(size_t)>;
+        using DeallocFunc = std::function<void(void *)>;
 
-        enum Event { READ = EPOLLIN, WRITE = EPOLLOUT, CLOSE = EPOLLRDHUP };
+        enum Event { READ = EPOLLIN, WRITE = EPOLLOUT, CLOSE = EPOLLRDHUP, EDGE = EPOLLET };
 
-        Epoll(AllocFunc alloc = ::malloc, DeallocFunc dealloc = ::free)
+        Epoll(void) = default;
+
+        Epoll(AllocFunc alloc, DeallocFunc dealloc)
             : epfd_(::epoll_create1(0))
             , alloc_(alloc)
             , dealloc_(dealloc)
         {
+            assert(alloc);
+            assert(dealloc);
         }
 
         Epoll(const Epoll & other)
@@ -71,20 +78,20 @@ namespace flyzero
             return *this;
         }
 
-        void add(IEpoll * ptr, FileDescriptor fd, uint32_t events)
+        void add(IEpoll * ptr, uint32_t events)
         {
             epoll_event ev;
             ev.events = events;
             ev.data.ptr = ptr;
-            epoll_ctl(epfd_.get(), EPOLL_CTL_ADD, fd.get(), &ev);
+            epoll_ctl(epfd_.get(), EPOLL_CTL_ADD, ptr->getFileDescriptor(), &ev);
         }
 
         void run(size_t size, int timeout, void (*onTimeout)(void *), void *arg) const;
 
 	private:
-        FileDescriptor epfd_;
-        AllocFunc alloc_;
-        DeallocFunc dealloc_;
+        FileDescriptor epfd_{ ::epoll_create1(0) };
+        AllocFunc alloc_{ ::malloc };
+        DeallocFunc dealloc_{ ::free };
 	};
 
 }
