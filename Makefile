@@ -23,4 +23,4 @@ release: ${TARGET}
 .PHONY: clean
 
 clean:
-	@rm ${OBJ} ${TARGET} 
+	rm -f ${OBJ} ${TARGET}
