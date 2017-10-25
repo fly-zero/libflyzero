@@ -5,19 +5,19 @@
 
 namespace FlyZero
 {
-	class ThreadPool : public Thread
-	{
-	public:
-		ThreadPool(void);
-		~ThreadPool(void);
-		size_t Start(size_t nthrd);
+    class ThreadPool : public Thread
+    {
+    public:
+        ThreadPool(void);
+        ~ThreadPool(void);
+        size_t Start(size_t nthrd);
 
-	private:
-		virtual void Run(void);
+    private:
+        virtual void Run(void);
 
-	private:
-		pthread_cond_t cond;
-		pthread_mutex_t mtx;
-		size_t nthread{ 0 };
-	};
+    private:
+        pthread_cond_t cond;
+        pthread_mutex_t mtx;
+        size_t nthread{ 0 };
+    };
 }

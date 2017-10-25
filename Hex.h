@@ -5,12 +5,12 @@
 
 namespace FlyZero
 {
-	class Hex
-	{
-	public:
-		static ErrorCode HexStr(const char *str, unsigned int length, uint64_t &val);
-		static ErrorCode HexStr(const char *str, unsigned int length, uint32_t &val);
-		static ErrorCode HexStr(const char *str, unsigned int length, uint8_t &val);
-		static ErrorCode HexStr(const char *str, unsigned int length, void * buffer, unsigned int & size);
-	};
+    class Hex
+    {
+    public:
+        static ErrorCode HexStr(const char *str, unsigned int length, uint64_t &val);
+        static ErrorCode HexStr(const char *str, unsigned int length, uint32_t &val);
+        static ErrorCode HexStr(const char *str, unsigned int length, uint8_t &val);
+        static ErrorCode HexStr(const char *str, unsigned int length, void * buffer, unsigned int & size);
+    };
 }

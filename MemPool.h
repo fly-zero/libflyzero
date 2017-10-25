@@ -27,61 +27,61 @@
 
 class MemPool
 {
-	struct Chunk;
+    struct Chunk;
 
-	struct BlockNode
-	{
-		Chunk * chunk;
-		BlockNode * prev;
-		BlockNode * next;
-		size_t checksum;
+    struct BlockNode
+    {
+        Chunk * chunk;
+        BlockNode * prev;
+        BlockNode * next;
+        size_t checksum;
 
-		size_t calcChecksum(void)
-		{
-			return (checksum = (reinterpret_cast<size_t>(chunk) ^ reinterpret_cast<size_t>(this)));
-		}
+        size_t calcChecksum(void)
+        {
+            return (checksum = (reinterpret_cast<size_t>(chunk) ^ reinterpret_cast<size_t>(this)));
+        }
 
-		bool check(void) const
-		{
-			return (checksum == (reinterpret_cast<size_t>(chunk) ^ reinterpret_cast<size_t>(this)));
-		}
-	};
+        bool check(void) const
+        {
+            return (checksum == (reinterpret_cast<size_t>(chunk) ^ reinterpret_cast<size_t>(this)));
+        }
+    };
 
-	class BlockList
-	{
-	public:
-		bool empty(void) const
-		{
-			return (m_head == nullptr);
-		}
+    class BlockList
+    {
+    public:
+        bool empty(void) const
+        {
+            return (m_head == nullptr);
+        }
 
-		BlockNode * pop(void);
+        BlockNode * pop(void);
 
-		void push(BlockNode * node);
+        void push(BlockNode * node);
 
-		void detach(BlockNode * node);
-
-#ifdef MEMPOOL_STATISTICS
-		size_t length(void) const
-		{
-			return m_length;
-		}
-#endif // MEMPOOL_STATISTICS
-
-	private:
-		BlockNode * m_head { nullptr };
+        void detach(BlockNode * node);
 
 #ifdef MEMPOOL_STATISTICS
-		size_t m_length { 0 };
+        size_t length(void) const
+        {
+            return m_length;
+        }
 #endif // MEMPOOL_STATISTICS
-	};
 
-	struct Chunk
-	{
-		unsigned int blockSize;
-		BlockList free;
-		BlockList used;
-	};
+    private:
+        BlockNode * m_head{ nullptr };
+
+#ifdef MEMPOOL_STATISTICS
+        size_t m_length{ 0 };
+#endif // MEMPOOL_STATISTICS
+    };
+
+    struct Chunk
+    {
+        unsigned int blockSize;
+        BlockList free;
+        BlockList used;
+    };
 
 public:
     MemPool(void * m_beg, void * m_end) :
@@ -89,7 +89,7 @@ public:
         m_end(static_cast<unsigned char *>(m_end)),
         m_cur(static_cast<unsigned char *>(m_beg))
     {
-		init();
+        init();
     }
 
     ~MemPool(void)
@@ -106,7 +106,7 @@ public:
     }
 
 #ifdef MEMPOOL_STATISTICS
-	double usageRatio(void);
+    double usageRatio(void);
 #endif // MEMPOOL_STATISTICS
 
 private:

@@ -33,11 +33,11 @@ void * MemPool::alloc(size_t size)
 
 void MemPool::free(void * ptr)
 {
-    BlockNode * block = (BlockNode *)((unsigned char *)(ptr) - sizeof (BlockNode));
+    BlockNode * block = (BlockNode *)((unsigned char *)(ptr)-sizeof (BlockNode));
     if (block->check())
     {
         Chunk & chunk = *block->chunk;
-        if (block->checksum == *(size_t *)((unsigned char *)(ptr) + chunk.blockSize))
+        if (block->checksum == *(size_t *)((unsigned char *)(ptr)+chunk.blockSize))
         {
             chunk.used.detach(block);
             chunk.free.push(block);
@@ -56,7 +56,7 @@ void MemPool::free(void * ptr)
 #ifdef MEMPOOL_STATISTICS
 double MemPool::usageRatio(void)
 {
-	return 0.0;
+    return 0.0;
 }
 #endif // MEMPOOL_STATISTICS
 
@@ -76,45 +76,45 @@ size_t MemPool::findChunkId(size_t size)
 
 MemPool::BlockNode * MemPool::BlockList::pop(void)
 {
-	BlockNode * ret = m_head;
-	m_head = m_head->next;
-	if (m_head)
-		m_head->prev = nullptr;
+    BlockNode * ret = m_head;
+    m_head = m_head->next;
+    if (m_head)
+        m_head->prev = nullptr;
 
 #ifdef MEMPOOL_STATISTICS
-	--m_length;
+    --m_length;
 #endif // MEMPOOL_STATISTICS
 
-	return ret;
+    return ret;
 }
 
 void MemPool::BlockList::push(MemPool::BlockNode * node)
 {
-	node->prev = nullptr;
-	node->next = m_head;
-	if (m_head)
-		m_head->prev = node;
-	m_head = node;
+    node->prev = nullptr;
+    node->next = m_head;
+    if (m_head)
+        m_head->prev = node;
+    m_head = node;
 
 #ifdef MEMPOOL_STATISTICS
-	++m_length;
+    ++m_length;
 #endif // MEMPOOL_STATISTICS
 }
 
 void MemPool::BlockList::detach(MemPool::BlockNode * node)
 {
-	BlockNode * prev = node->prev;
-	BlockNode * next = node->next;
-	
-	if (m_head == node && !prev)
-		pop();
-	else
-	{
-		prev->next = next;
-		next->prev = prev;
+    BlockNode * prev = node->prev;
+    BlockNode * next = node->next;
+
+    if (m_head == node && !prev)
+        pop();
+    else
+    {
+        prev->next = next;
+        next->prev = prev;
 
 #ifdef MEMPOOL_STATISTICS
-		--m_length;
+        --m_length;
 #endif // MEMPOOL_STATISTICS
-	}
+    }
 }
