@@ -35,7 +35,7 @@ namespace flyzero
             assert(alloc);
             assert(dealloc);
         }
-        
+
         TcpServer(const TcpServer &) = default;
 
         TcpServer(TcpServer &&) = default;

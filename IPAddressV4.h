@@ -9,10 +9,10 @@
 
 namespace flyzero
 {
-	class IPAddressV4
-	{
-	public:
-		typedef std::array<uint8_t, 4> ByteArray4;
+    class IPAddressV4
+    {
+    public:
+        typedef std::array<uint8_t, 4> ByteArray4;
 
         IPAddressV4(void)
         {
@@ -32,9 +32,9 @@ namespace flyzero
         }
 
         struct in_addr getInAddr(void) const
-		{
-			return addr_.inAddr_;
-		}
+        {
+            return addr_.inAddr_;
+        }
 
         struct in_addr & inAddr(void)
         {
@@ -46,23 +46,23 @@ namespace flyzero
             return addr_.inAddr_;
         }
 
-		bool operator==(const IPAddressV4 & other) const
-		{
-			return addr_.inAddr_.s_addr == other.addr_.inAddr_.s_addr;
-		}
+        bool operator==(const IPAddressV4 & other) const
+        {
+            return addr_.inAddr_.s_addr == other.addr_.inAddr_.s_addr;
+        }
 
-		size_t hash(void) const
-		{
-			return addr_.inAddr_.s_addr;
-		}
+        size_t hash(void) const
+        {
+            return addr_.inAddr_.s_addr;
+        }
 
-	private:
-		union AddressStorage
-		{
-			static_assert(sizeof (struct in_addr) == sizeof (ByteArray4),
-				"size of in_addr and ByteArray4 are different");
-			struct in_addr inAddr_;
-			ByteArray4 bytes_;
-		} addr_;
-	};
+    private:
+        union AddressStorage
+        {
+            static_assert(sizeof (struct in_addr) == sizeof (ByteArray4),
+                "size of in_addr and ByteArray4 are different");
+            struct in_addr inAddr_;
+            ByteArray4 bytes_;
+        } addr_;
+    };
 }

@@ -7,9 +7,9 @@
 namespace flyzero
 {
 
-	template <class _Type, class _Alloc, class _Dealloc>
-	class Allocator
-	{
+    template <class _Type, class _Alloc, class _Dealloc>
+    class Allocator
+    {
     public:
         using value_type = _Type;
         using pointer = value_type *;
@@ -44,37 +44,37 @@ namespace flyzero
         {
         }
 
-		pointer allocate(std::size_t n)
-		{
-			return static_cast<pointer>(alloc_(n * sizeof (value_type)));
-		}
+        pointer allocate(std::size_t n)
+        {
+            return static_cast<pointer>(alloc_(n * sizeof (value_type)));
+        }
 
-		void deallocate(pointer p, std::size_t n)
-		{
-			dealloc_(p);
-		}
+        void deallocate(pointer p, std::size_t n)
+        {
+            dealloc_(p);
+        }
 
-		static void construct(pointer p, const_reference val)
-		{
-			::new (static_cast<void *>(p)) _Type(val);
-		}
+        static void construct(pointer p, const_reference val)
+        {
+            ::new (static_cast<void *>(p)) _Type(val);
+        }
 
-		template <class U, class... Args>
-		static void construct(U * p, Args&&... args)
-		{
-			::new (static_cast<void *>(p)) U(std::forward<Args>(args)...);
-		}
+        template <class U, class... Args>
+        static void construct(U * p, Args&&... args)
+        {
+            ::new (static_cast<void *>(p)) U(std::forward<Args>(args)...);
+        }
 
-		static void destroy(pointer p)
-		{
-			p->~_Type();
-		}
+        static void destroy(pointer p)
+        {
+            p->~_Type();
+        }
 
-		template <class U>
-		static void destroy(U * p)
-		{
-			p->~U();
-		}
+        template <class U>
+        static void destroy(U * p)
+        {
+            p->~U();
+        }
 
         alloc_param_type getAlloc(void) const
         {
@@ -89,6 +89,6 @@ namespace flyzero
     private:
         alloc_type alloc_;
         dealloc_type dealloc_;
-	};
+    };
 
 }

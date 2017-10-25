@@ -12,6 +12,7 @@
 
 namespace flyzero
 {
+
     class IEpoll
     {
     public:
@@ -21,9 +22,9 @@ namespace flyzero
         virtual int getFileDescriptor(void) const = 0;
     };
 
-	class Epoll
-	{
-	public:
+    class Epoll
+    {
+    public:
         using alloc_type = std::function<void*(size_t)>;
         using dealloc_type = std::function<void(void *)>;
 
@@ -88,10 +89,10 @@ namespace flyzero
 
         void run(size_t size, int timeout, void (*onTimeout)(void *), void *arg) const;
 
-	private:
+    private:
         FileDescriptor epfd_{ ::epoll_create1(0) };
         alloc_type alloc_{ ::malloc };
         dealloc_type dealloc_{ ::free };
-	};
+    };
 
 }
