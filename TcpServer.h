@@ -5,6 +5,7 @@
 #include <memory>
 #include <cstdlib>
 #include <cassert>
+#include <functional>
 #include <set>
 
 #include "FileDescriptor.h"
@@ -18,14 +19,18 @@ namespace flyzero
         : public IEpoll
     {
     public:
-        typedef void * (*AllocFunc)(size_t);
-        typedef void (*DeallocFunc)(void *);
+        using alloc_type = std::function<void*(size_t)>;
+        using dealloc_type = std::function<void(void *)>;
+        using pointer = std::unique_ptr<void *, dealloc_type>;
+        using allocator = Allocator<pointer, alloc_type, dealloc_type>;
+        using set_type = std::set<pointer, std::less<pointer>, allocator>;
 
         TcpServer(void) = default;
 
-        TcpServer(AllocFunc alloc, DeallocFunc dealloc)
+        TcpServer(alloc_type alloc, dealloc_type dealloc)
             : alloc_(alloc)
             , dealloc_(dealloc)
+            , set_(set_type::key_compare(), allocator(alloc_, dealloc_))
         {
             assert(alloc);
             assert(dealloc);
@@ -79,23 +84,9 @@ namespace flyzero
 
     private:
         FileDescriptor sock_;
-        AllocFunc alloc_{ ::malloc };
-        DeallocFunc dealloc_{ ::free };
-    };
-
-
-    template<class _Type, class _Alloc, class _Dealloc>
-    class TcpServerAllocator
-        : public Allocator<_Type, _Alloc, _Dealloc>
-    {
-    public:
-        TcpServerAllocator(TcpServer & tcpServer)
-            : tcpServer_(tcpServer)
-        {
-        }
-
-    private:
-        TcpServer & tcpServer_;
+        alloc_type alloc_{ ::malloc };
+        dealloc_type dealloc_{ ::free };
+        set_type set_;
     };
 
 }

@@ -24,14 +24,14 @@ namespace flyzero
 	class Epoll
 	{
 	public:
-        using AllocFunc = std::function<void*(size_t)>;
-        using DeallocFunc = std::function<void(void *)>;
+        using alloc_type = std::function<void*(size_t)>;
+        using dealloc_type = std::function<void(void *)>;
 
         enum Event { READ = EPOLLIN, WRITE = EPOLLOUT, CLOSE = EPOLLRDHUP, EDGE = EPOLLET };
 
         Epoll(void) = default;
 
-        Epoll(AllocFunc alloc, DeallocFunc dealloc)
+        Epoll(alloc_type alloc, dealloc_type dealloc)
             : epfd_(::epoll_create1(0))
             , alloc_(alloc)
             , dealloc_(dealloc)
@@ -90,8 +90,8 @@ namespace flyzero
 
 	private:
         FileDescriptor epfd_{ ::epoll_create1(0) };
-        AllocFunc alloc_{ ::malloc };
-        DeallocFunc dealloc_{ ::free };
+        alloc_type alloc_{ ::malloc };
+        dealloc_type dealloc_{ ::free };
 	};
 
 }
