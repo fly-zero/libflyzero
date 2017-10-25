@@ -13,11 +13,11 @@ ${TARGET}: ${OBJ}
 	${CC} ${CFLAGS} $^ -o $@
 
 .PHONY: debug
-debug: CFLAGS += -g
+debug: CFLAGS += -g3
 debug: ${TARGET}
 
 .PHONY: release
-release: CFLAGS += -O2
+release: CFLAGS += -O2 -DNDEBUG
 release: ${TARGET}
 
 .PHONY: clean
