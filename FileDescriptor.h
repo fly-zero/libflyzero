@@ -9,46 +9,46 @@ namespace flyzero
     class FileDescriptor
     {
     public:
-        FileDescriptor(void) = default;
+        constexpr FileDescriptor(void) = default;
 
-        explicit FileDescriptor(int fd)
+        explicit FileDescriptor(int fd) noexcept
             : fd_(fd)
         {
         }
 
-        FileDescriptor(const FileDescriptor & other)
+        FileDescriptor(const FileDescriptor & other) noexcept
             : fd_(other.fd_ == -1 ? -1 : ::dup(other.fd_))
         {
         }
 
-        FileDescriptor(FileDescriptor && other)
+        FileDescriptor(FileDescriptor && other) noexcept
             : fd_(other.fd_)
         {
             other.fd_ = -1;
         }
 
-        ~FileDescriptor(void)
+        ~FileDescriptor(void) noexcept
         {
             if (fd_ >= 0) ::close(fd_);
         }
 
-        int get(void) const
+        int get(void) const noexcept
         {
             return fd_;
         }
 
-        void close(void)
+        void close(void) noexcept
         {
             ::close(fd_);
             fd_ = -1;
         }
 
-        FileDescriptor Dup(void)
+        FileDescriptor clone(void) const noexcept
         {
             return FileDescriptor(::dup(fd_));
         }
 
-        bool SetUnblock(void) const
+        bool setNonblocking(void) const noexcept
         {
             auto ret = fcntl(fd_, F_GETFL);
             if (ret == -1)
@@ -56,24 +56,24 @@ namespace flyzero
             return fcntl(fd_, F_SETFL, ret | O_NONBLOCK) != -1;
         }
 
-        bool operator!(void) const
+        bool operator!(void) const noexcept
         {
             return fd_ == -1;
         }
 
-        operator bool(void) const
+        explicit operator bool(void) const noexcept
         {
             return fd_ != -1;
         }
 
-        FileDescriptor & operator=(const FileDescriptor & other)
+        FileDescriptor & operator=(const FileDescriptor & other) noexcept
         {
             if (this != &other)
                 fd_ = other.fd_ == -1 ? -1 : ::dup(other.fd_);
             return *this;
         }
 
-        FileDescriptor & operator=(FileDescriptor && other)
+        FileDescriptor & operator=(FileDescriptor && other) noexcept
         {
             if (this != &other)
             {
@@ -83,7 +83,7 @@ namespace flyzero
             return *this;
         }
 
-        bool operator<(const FileDescriptor & other) const
+        bool operator<(const FileDescriptor & other) const noexcept
         {
             return fd_ < other.fd_;
         }

@@ -2,7 +2,7 @@
 
 #include <cstdint>		// c++11 is needed
 
-namespace FlyZero
+namespace flyzero
 {
     class Memory
     {

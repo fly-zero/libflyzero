@@ -2,7 +2,7 @@
 #include "Hex.h"
 #include "Memory.h"
 
-namespace FlyZero
+namespace flyzero
 {
 
     Chunked::Chunked(void) :

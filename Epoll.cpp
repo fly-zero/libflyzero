@@ -1,3 +1,5 @@
+#include <iostream>
+
 #include "Epoll.h"
 
 namespace flyzero
@@ -16,9 +18,10 @@ namespace flyzero
                 continue;
             }
 
-            for (int i = 0; i < nev; ++i)
+            for (auto i = 0; i < nev; ++i)
             {
-                IEpoll * p = static_cast<IEpoll *>(events[i].data.ptr);
+                auto p = static_cast<IEpoll *>(events[i].data.ptr);
+
                 if (events[i].events & EPOLLIN)
                     p->onRead();
 
@@ -26,7 +29,7 @@ namespace flyzero
                     p->onWrite();
 
                 if (events[i].events & EPOLLRDHUP)
-                    p->onRead();
+                    p->onClose();
             }
         }
 

@@ -3,7 +3,7 @@
 #include <cstdint>	// c++11 is needed
 #include "Error.h"
 
-namespace FlyZero
+namespace flyzero
 {
     class Hex
     {

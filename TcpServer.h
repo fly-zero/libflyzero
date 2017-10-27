@@ -3,12 +3,9 @@
 #include <netinet/in.h>
 
 #include <memory>
-#include <cstdlib>
 #include <cassert>
 #include <functional>
-#include <set>
 
-#include "Allocator.h"
 #include "FileDescriptor.h"
 #include "Epoll.h"
 #include "TcpConnection.h"
@@ -19,42 +16,14 @@ namespace flyzero
     class TcpServer
         : public IEpoll
     {
-    protected:
-        class connection_deleter
-        {
-        public:
-            using dealloc_type = std::function<void(void *)>;
-            
-            constexpr connection_deleter(void) = default;
-
-            connection_deleter(const dealloc_type & dealloc)
-                : dealloc_(dealloc)
-            {
-            }
-
-            void operator()(TcpConnection * connection)
-            {
-                assert(connection);
-                connection->~TcpConnection();
-                dealloc_(connection);
-            }
-
-        private:
-            dealloc_type dealloc_{ ::free };
-        };
-
     public:
         using alloc_type = std::function<void*(size_t)>;
         using dealloc_type = std::function<void(void *)>;
-        using conneciton_pointer = std::unique_ptr<TcpConnection, connection_deleter>;
-        using connection_allocator = Allocator<conneciton_pointer, alloc_type, dealloc_type>;
-        using connection_set = std::set<conneciton_pointer, std::less<conneciton_pointer>, connection_allocator>;
 
         TcpServer(void) = default;
 
         TcpServer(const alloc_type & alloc, const dealloc_type & dealloc)
-            : set_(connection_set::key_compare(), connection_allocator(alloc, dealloc))
-            , epoll_(alloc, dealloc)
+            : epoll_(alloc, dealloc)
         {
             assert(alloc);
             assert(dealloc);
@@ -73,7 +42,7 @@ namespace flyzero
             return *this;
         }
 
-        TcpServer & operator=(TcpServer && other)
+        TcpServer & operator=(TcpServer && other) noexcept
         {
             if (this != &other)
                 sock_ = std::move(other.sock_);
@@ -86,13 +55,13 @@ namespace flyzero
         FileDescriptor accept(void) const
         {
             sockaddr addr;
-            socklen_t len = sizeof addr;
+            auto len = socklen_t(sizeof addr);
             return FileDescriptor(::accept(sock_.get(), &addr, &len));
         }
 
         FileDescriptor accept(sockaddr_in & addr) const
         {
-            socklen_t len = sizeof addr;
+            auto len = socklen_t(sizeof addr);
             return FileDescriptor(::accept(sock_.get(), reinterpret_cast<sockaddr *>(&addr), &len));
         }
 
@@ -118,22 +87,22 @@ namespace flyzero
 
         virtual void onTimeout(void) = 0;
 
-        void onRead(void) override;
+        void addConnection(TcpConnection & connection, uint32_t events)
+        {
+            epoll_.add(connection, events);
+        }
+
+        void removeConnection(const TcpConnection & connection)
+        {
+            epoll_.remove(connection);
+        }
 
         void onWrite(void) override { }
 
         void onClose(void) override { }
 
-        void add(TcpConnection * connection, const dealloc_type & dealloc)
-        {
-            epoll_.add(connection, Epoll::Event::READ | Epoll::EDGE);
-            //set_.emplace(connection, dealloc);
-            conneciton_pointer p(connection, connection_deleter(dealloc));
-        }
-
     private:
         FileDescriptor sock_;
-        connection_set set_;
         Epoll epoll_;
     };
 

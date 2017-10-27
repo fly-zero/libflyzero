@@ -1,7 +1,7 @@
 #include "Hex.h"
 #include "Memory.h"
 
-namespace FlyZero
+namespace flyzero
 {
     static const int hex_map[] = {
         -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -40,7 +40,7 @@ namespace FlyZero
         val.uint64_val = 0;
         for (unsigned int i = 0; i < length; ++i)
         {
-            unsigned int tmp = static_cast<unsigned int>(hex_map[str[i]]);
+            auto tmp = static_cast<unsigned int>(hex_map[str[i]]);
             if (-1 == tmp)
                 return ErrorCode::FZ_INVALID_PARAM;
             val.uint64_val = tmp + (val.uint64_val << 4);
@@ -52,7 +52,7 @@ namespace FlyZero
     {
         ErrorCode ret;
         Value res;
-        if (ErrorCode::FZ_SUCCESS == (ret = FlyZero::HexStr(str, length, res)))
+        if (ErrorCode::FZ_SUCCESS == (ret = flyzero::HexStr(str, length, res)))
             val = res.uint64_val;
         return ret;
     }
@@ -61,7 +61,7 @@ namespace FlyZero
     {
         ErrorCode ret;
         Value res;
-        if (ErrorCode::FZ_SUCCESS == (ret = FlyZero::HexStr(str, length, res)))
+        if (ErrorCode::FZ_SUCCESS == (ret = flyzero::HexStr(str, length, res)))
             val = res.uint32_val;
         return ret;
     }
@@ -70,7 +70,7 @@ namespace FlyZero
     {
         ErrorCode ret;
         Value res;
-        if (ErrorCode::FZ_SUCCESS == (ret = FlyZero::HexStr(str, length, res)))
+        if (ErrorCode::FZ_SUCCESS == (ret = flyzero::HexStr(str, length, res)))
             val = res.uint8_val;
         return ret;
     }

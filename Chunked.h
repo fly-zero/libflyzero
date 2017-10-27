@@ -2,7 +2,7 @@
 
 #include "Error.h"
 
-namespace FlyZero
+namespace flyzero
 {
 
     class Chunked

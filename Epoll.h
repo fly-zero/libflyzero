@@ -3,8 +3,6 @@
 #include <sys/epoll.h>
 
 #include <utility>
-#include <cstdlib>
-#include <cstdio>
 #include <cassert>
 #include <functional>
 
@@ -16,9 +14,18 @@ namespace flyzero
     class IEpoll
     {
     public:
+        virtual ~IEpoll(void) = default;
+
+        // readable event callback
         virtual void onRead(void) = 0;
+
+        // writable event callback
         virtual void onWrite(void) = 0;
+
+        // remote close event callback, the file descriptor will be removed before callback
         virtual void onClose(void) = 0;
+
+        // file descriptor getter
         virtual int getFileDescriptor(void) const = 0;
     };
 
@@ -32,7 +39,7 @@ namespace flyzero
 
         Epoll(void) = default;
 
-        Epoll(alloc_type alloc, dealloc_type dealloc)
+        Epoll(const alloc_type & alloc, const dealloc_type & dealloc)
             : epfd_(::epoll_create1(0))
             , alloc_(alloc)
             , dealloc_(dealloc)
@@ -48,10 +55,10 @@ namespace flyzero
         {
         }
 
-        Epoll(Epoll && other)
+        Epoll(Epoll && other) noexcept
             : epfd_(std::move(other.epfd_))
-            , alloc_(other.alloc_)
-            , dealloc_(other.dealloc_)
+            , alloc_(std::move(other.alloc_))
+            , dealloc_(std::move(other.dealloc_))
         {
         }
 
@@ -68,7 +75,7 @@ namespace flyzero
             return *this;
         }
 
-        Epoll & operator=(Epoll && other)
+        Epoll & operator=(Epoll && other) noexcept
         {
             if (this != &other)
             {
@@ -79,12 +86,24 @@ namespace flyzero
             return *this;
         }
 
-        void add(IEpoll * ptr, uint32_t events)
+        void add(IEpoll & iepoll, uint32_t events)
         {
             epoll_event ev;
             ev.events = events;
-            ev.data.ptr = ptr;
-            epoll_ctl(epfd_.get(), EPOLL_CTL_ADD, ptr->getFileDescriptor(), &ev);
+            ev.data.ptr = &iepoll;
+            epoll_ctl(epfd_.get(), EPOLL_CTL_ADD, iepoll.getFileDescriptor(), &ev);
+            ++size_;
+        }
+
+        void remove(const IEpoll & iepoll)
+        {
+            epoll_ctl(epfd_.get(), EPOLL_CTL_DEL, iepoll.getFileDescriptor(), nullptr);
+            --size_;
+        }
+
+        size_t size(void) const
+        {
+            return size_;
         }
 
         void run(size_t size, int timeout, void (*onTimeout)(void *), void *arg) const;
@@ -93,6 +112,7 @@ namespace flyzero
         FileDescriptor epfd_{ ::epoll_create1(0) };
         alloc_type alloc_{ ::malloc };
         dealloc_type dealloc_{ ::free };
+        size_t size_{ 0 };
     };
 
 }

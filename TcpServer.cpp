@@ -1,6 +1,5 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <arpa/inet.h>
 
 #include "TcpServer.h"
 
@@ -14,7 +13,7 @@ namespace flyzero
         if (!sock)
             return false;
 
-        if (!sock.SetUnblock())
+        if (!sock.setNonblocking())
             return false;
 
         sockaddr_in addr{ };
@@ -29,6 +28,7 @@ namespace flyzero
             return false;
 
         sock_ = std::move(sock);
+        epoll_.add(*this, flyzero::Epoll::READ | flyzero::Epoll::EDGE);
         return true;
     }
 }

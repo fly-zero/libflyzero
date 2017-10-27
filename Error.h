@@ -1,6 +1,6 @@
 #pragma once
 
-namespace FlyZero
+namespace flyzero
 {
     enum class ErrorCode
     {

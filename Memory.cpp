@@ -1,6 +1,6 @@
 #include "Memory.h"
 
-namespace FlyZero
+namespace flyzero
 {
 
     unsigned int Memory::SearchCharacters(const void * src, unsigned int srclen, const char * str, unsigned int strlen)
