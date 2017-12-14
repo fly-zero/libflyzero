@@ -1,13 +1,13 @@
 #pragma once
 
 #include "FileDescriptor.h"
-#include "Epoll.h"
+#include "epoll.h"
 
 namespace flyzero
 {
 
     class TcpConnection
-        : public IEpoll
+        : public epoll_listener
     {
     public:
         constexpr TcpConnection(void) = default;
@@ -30,7 +30,7 @@ namespace flyzero
 
         virtual ~TcpConnection(void) = default;
 
-        int getFileDescriptor(void) const noexcept override
+        int get_fd(void) const noexcept override
         {
             return sock_.get();
         }

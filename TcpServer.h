@@ -8,14 +8,14 @@
 #include <functional>
 
 #include "FileDescriptor.h"
-#include "Epoll.h"
+#include "epoll.h"
 #include "TcpConnection.h"
 
 namespace flyzero
 {
 
     class TcpServer
-        : public IEpoll
+        : public epoll_listener
     {
     public:
         using alloc_type = std::function<void*(size_t)>;
@@ -71,7 +71,7 @@ namespace flyzero
             sock_.close();
         }
 
-        int getFileDescriptor(void) const override
+        int get_fd(void) const override
         {
             return sock_.get();
         }
@@ -98,13 +98,13 @@ namespace flyzero
             epoll_.remove(connection);
         }
 
-        void onWrite(void) override { }
+        void on_write(void) override { }
 
-        void onClose(void) override { }
+        void on_close(void) override { }
 
     private:
         FileDescriptor sock_;
-        Epoll epoll_;
+        epoll epoll_;
     };
 
 }

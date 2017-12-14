@@ -28,7 +28,7 @@ namespace flyzero
             return false;
 
         sock_ = std::move(sock);
-        epoll_.add(*this, flyzero::Epoll::READ | flyzero::Epoll::EDGE);
+        epoll_.add(*this, flyzero::epoll::epoll_read | flyzero::epoll::epoll_edge);
         return true;
     }
 }

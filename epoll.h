@@ -14,22 +14,22 @@ namespace flyzero
     class epoll_listener
     {
     public:
-        virtual ~epoll_listener(void) = default;
+        virtual ~epoll_listener() = default;
 
         // readable event callback
-        virtual void on_read(void) = 0;
+        virtual void on_read() = 0;
 
         // writable event callback
-        virtual void on_write(void) = 0;
+        virtual void on_write() = 0;
 
         // remote close event callback, the file descriptor will be removed before callback
-        virtual void on_close(void) = 0;
+        virtual void on_close() = 0;
 
         // file descriptor getter
-        virtual int get_fd(void) const = 0;
+        virtual int get_fd() const = 0;
     };
 
-    class epoll
+    class epoll final
     {
     public:
         using alloc_type = std::function<void*(std::size_t)>;
@@ -62,7 +62,7 @@ namespace flyzero
         {
         }
 
-        ~epoll(void) = default;
+        ~epoll() = default;
 
         epoll & operator=(const epoll & other)
         {
@@ -101,7 +101,7 @@ namespace flyzero
             --size_;
         }
 
-        std::size_t size(void) const
+        std::size_t size() const
         {
             return size_;
         }

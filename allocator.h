@@ -26,7 +26,7 @@ namespace flyzero
             using other = allocator<OtherType, OtherAlloc, OtherDealloc>;
         };
 
-        allocator(void) = default;
+        allocator() = default;
 
         allocator(alloc_param_type alloc, dealloc_param_type dealloc)
             : alloc_(alloc)
@@ -75,12 +75,12 @@ namespace flyzero
             p->~U();
         }
 
-        alloc_param_type get_alloc(void) const
+        alloc_param_type get_alloc() const
         {
             return alloc_;
         }
 
-        dealloc_param_type get_dealloc(void) const
+        dealloc_param_type get_dealloc() const
         {
             return dealloc_;
         }
