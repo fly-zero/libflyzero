@@ -1,35 +1,35 @@
 #include <iostream>
 
-#include "Epoll.h"
+#include "epoll.h"
 
 namespace flyzero
 {
 
-    void Epoll::run(size_t size, int timeout, void(*onTimeout)(void *), void * arg) const
+    void epoll::run(std::size_t const size, int const timeout, void(*on_timeout)(void *), void * arg) const
     {
-        auto events = reinterpret_cast<epoll_event *>(alloc_(size * sizeof (epoll_event)));
+        auto const events = reinterpret_cast<epoll_event *>(alloc_(size * sizeof (epoll_event)));
 
         for (int nev; (nev = epoll_wait(epfd_.get(), events, size, timeout)) != -1; )
         {
             if (nev == 0)
             {
-                if (onTimeout)
-                    onTimeout(arg);
+                if (on_timeout)
+                    on_timeout(arg);
                 continue;
             }
 
             for (auto i = 0; i < nev; ++i)
             {
-                auto p = static_cast<IEpoll *>(events[i].data.ptr);
+                auto p = static_cast<epoll_listener *>(events[i].data.ptr);
 
                 if (events[i].events & EPOLLIN)
-                    p->onRead();
+                    p->on_read();
 
                 if (events[i].events & EPOLLOUT)
-                    p->onWrite();
+                    p->on_write();
 
                 if (events[i].events & EPOLLRDHUP)
-                    p->onClose();
+                    p->on_close();
             }
         }
 
