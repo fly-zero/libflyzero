@@ -1,5 +1,5 @@
 #include "Chunked.h"
-#include "Hex.h"
+#include "hex.h"
 #include "Memory.h"
 
 namespace flyzero
@@ -49,7 +49,7 @@ namespace flyzero
 
                 // get chunked data length
                 uint32_t length;
-                if (ErrorCode::FZ_SUCCESS != (err = Hex::HexStr(chunked_data, pos, length)))
+                if (ErrorCode::FZ_SUCCESS != (err = hex::hex_str(chunked_data, pos, length)))
                     return err;
                 else if (0 == length)
                     return ErrorCode::FZ_SUCCESS;
@@ -123,7 +123,7 @@ namespace flyzero
 
                 // get chunked data length
                 uint32_t length;
-                if (ErrorCode::FZ_SUCCESS != (err = Hex::HexStr(chunked_data, pos, length)))
+                if (ErrorCode::FZ_SUCCESS != (err = hex::hex_str(chunked_data, pos, length)))
                     return err;
                 else if (0 == length)
                     return ErrorCode::FZ_SUCCESS;
