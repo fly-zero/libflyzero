@@ -2,32 +2,33 @@
 
 #include <array>
 #include <cstring>
+#include <cstdint>
 #include <netinet/in.h>
 
 namespace flyzero
 {
-    class IPAddressV6
+    class ipv6_addr
     {
     public:
-        typedef std::array<uint8_t, 16> ByteArray16;
-        typedef std::array<uint64_t, 2> QwordArray2;
+        typedef std::array<uint8_t, 16> byte_array;
+        typedef std::array<uint64_t, 2> qword_array;
 
-        const struct in6_addr getInAddr(void) const
+        const struct in6_addr & get_in_addr() const
         {
-            return addr.inAddr;
+            return addr_.in_addr_;
         }
 
-        bool operator==(const IPAddressV6 & other) const
+        bool operator==(const ipv6_addr & other) const
         {
-            return (addr.qwords[0] == other.addr.qwords[0] && addr.qwords[1] == other.addr.qwords[1]);
+            return (addr_.qwords_[0] == other.addr_.qwords_[0] && addr_.qwords_[1] == other.addr_.qwords_[1]);
         }
 
-        size_t hash(void) const
+        std::size_t hash() const
         {
 #if (defined _WIN64) || (defined __x86_64__)
-            static_assert(sizeof (size_t) == sizeof (uint64_t),
+            static_assert(sizeof (std::size_t) == sizeof (uint64_t),
                 "sizeof 'size_t' and 'uint64_t' are different");
-            return addr.qwords[0] ^ addr.qwords[1];
+            return addr_.qwords_[0] ^ addr_.qwords_[1];
 #else
             static_assert(sizeof (size_t) == sizeof (uint32_t),
                 "sizeof 'size_t' and 'uint32_t' are different");
@@ -39,15 +40,15 @@ namespace flyzero
     private:
         union AddressStorage
         {
-            static_assert(sizeof (struct in6_addr) == sizeof (ByteArray16),
+            static_assert(sizeof (struct in6_addr) == sizeof (byte_array),
                 "size of 'in6_addr' and 'ByteArray16' are different");
-            struct in6_addr inAddr;
-            ByteArray16 bytes;
-            QwordArray2 qwords;
+            struct in6_addr in_addr_;
+            byte_array bytes_;
+            qword_array qwords_;
             AddressStorage(void)
             {
                 memset(this, 0, sizeof (AddressStorage));
             }
-        } addr;
+        } addr_;
     };
 }
