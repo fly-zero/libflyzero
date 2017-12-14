@@ -1,50 +1,49 @@
 #pragma once
 
-#include <new>
 #include <utility>
 #include <type_traits>
 
 namespace flyzero
 {
 
-    template <class _Type, class _Alloc, class _Dealloc>
-    class Allocator
+    template <class Type, class Alloc, class Dealloc>
+    class allocator
     {
     public:
-        using value_type = _Type;
+        using value_type = Type;
         using pointer = value_type *;
         using const_pointer = const pointer;
         using reference = value_type &;
         using const_reference = const reference;
-        using alloc_type = _Alloc;
-        using dealloc_type = _Dealloc;
+        using alloc_type = Alloc;
+        using dealloc_type = Dealloc;
         using alloc_param_type = typename std::conditional<std::is_fundamental<alloc_type>::value, alloc_type, const alloc_type &>::type;
         using dealloc_param_type = typename std::conditional<std::is_fundamental<dealloc_type>::value, dealloc_type, const dealloc_type &>::type;
 
-        template <class _OtherType, class _OtherAlloc = _Alloc, class _OtherDealloc = _Dealloc>
+        template <class OtherType, class OtherAlloc = Alloc, class OtherDealloc = Dealloc>
         struct rebind
         {
-            using other = Allocator<_OtherType, _OtherAlloc, _OtherDealloc>;
+            using other = allocator<OtherType, OtherAlloc, OtherDealloc>;
         };
 
-        Allocator(void) = default;
+        allocator(void) = default;
 
-        Allocator(alloc_param_type alloc, dealloc_param_type dealloc)
+        allocator(alloc_param_type alloc, dealloc_param_type dealloc)
             : alloc_(alloc)
             , dealloc_(dealloc)
         {
         }
 
-        explicit Allocator(const Allocator &) = default;
+        explicit allocator(const allocator &) = default;
 
-        template <class _OtherType, class _OtherAlloc, class _OtherDealloc>
-        explicit Allocator(const Allocator<_OtherType, _OtherAlloc, _OtherDealloc> & other)
-            : alloc_(other.getAlloc())
-            , dealloc_(other.getDealloc())
+        template <class OtherType, class OtherAlloc, class OtherDealloc>
+        explicit allocator(const allocator<OtherType, OtherAlloc, OtherDealloc> & other)
+            : alloc_(other.get_alloc())
+            , dealloc_(other.get_dealloc())
         {
         }
 
-        pointer allocate(std::size_t n)
+        pointer allocate(std::size_t const n)
         {
             return static_cast<pointer>(alloc_(n * sizeof (value_type)));
         }
@@ -54,9 +53,9 @@ namespace flyzero
             dealloc_(p);
         }
 
-        static void construct(pointer p, const_reference val)
+        static void construct(pointer const p, const_reference val)
         {
-            ::new (static_cast<void *>(p)) _Type(val);
+            ::new (static_cast<void *>(p)) Type(val);
         }
 
         template <class U, class... Args>
@@ -76,12 +75,12 @@ namespace flyzero
             p->~U();
         }
 
-        alloc_param_type getAlloc(void) const
+        alloc_param_type get_alloc(void) const
         {
             return alloc_;
         }
 
-        dealloc_param_type getDealloc(void) const
+        dealloc_param_type get_dealloc(void) const
         {
             return dealloc_;
         }
