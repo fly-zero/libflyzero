@@ -22,102 +22,104 @@
  \***************************************************************************/
 
 #include <cstdlib>
+#include <array>
 
-#define MEMPOOL_STATISTICS
-
-class MemPool
+namespace flyzero
 {
-    struct Chunk;
 
-    struct BlockNode
+    class mempool
     {
-        Chunk * chunk;
-        BlockNode * prev;
-        BlockNode * next;
-        size_t checksum;
+        struct chunk;
 
-        size_t calcChecksum(void)
+        struct block_node
         {
-            return (checksum = (reinterpret_cast<size_t>(chunk) ^ reinterpret_cast<size_t>(this)));
-        }
+            chunk * chunk;
+            block_node * prev;
+            block_node * next;
+            std::size_t checksum;
 
-        bool check(void) const
+            std::size_t calc_checksum()
+            {
+                return checksum = reinterpret_cast<std::size_t>(chunk) ^ reinterpret_cast<std::size_t>(this);
+            }
+
+            bool check() const
+            {
+                return checksum == (reinterpret_cast<std::size_t>(chunk) ^ reinterpret_cast<std::size_t>(this));
+            }
+        };
+
+        class block_list
         {
-            return (checksum == (reinterpret_cast<size_t>(chunk) ^ reinterpret_cast<size_t>(this)));
-        }
-    };
+        public:
+            bool empty() const
+            {
+                return (head_ == nullptr);
+            }
 
-    class BlockList
-    {
+            block_node * pop(void);
+
+            void push(block_node * node);
+
+            void detach(block_node * node);
+
+            std::size_t length() const
+            {
+                return length_;
+            }
+
+        private:
+            block_node * head_{ nullptr };
+
+            std::size_t length_{ 0 };
+        };
+
+        struct chunk
+        {
+            unsigned int block_size;
+            block_list free_list;
+            block_list used_list;
+
+            std::size_t get_impl_size() const
+            {
+                return sizeof (block_node) + block_size + sizeof (std::size_t);
+            }
+        };
+
     public:
-        bool empty(void) const
+        mempool(void * m_beg, void * m_end) :
+            beg_(static_cast<unsigned char *>(m_beg)),
+            end_(static_cast<unsigned char *>(m_end)),
+            cur_(static_cast<unsigned char *>(m_beg))
         {
-            return (m_head == nullptr);
+            init();
         }
 
-        BlockNode * pop(void);
-
-        void push(BlockNode * node);
-
-        void detach(BlockNode * node);
-
-#ifdef MEMPOOL_STATISTICS
-        size_t length(void) const
+        ~mempool()
         {
-            return m_length;
         }
-#endif // MEMPOOL_STATISTICS
+
+        void * alloc(std::size_t size);
+
+        void free(void * ptr);
+
+        std::size_t avialable_size() const
+        {
+            return end_ - cur_;
+        }
+
+        static double usage_ratio();
+
+    protected:
+        void init();
+
+        std::size_t find_chunk_id(const std::size_t size) const;
 
     private:
-        BlockNode * m_head{ nullptr };
-
-#ifdef MEMPOOL_STATISTICS
-        size_t m_length{ 0 };
-#endif // MEMPOOL_STATISTICS
+        std::array<chunk, 29> chunks_;
+        unsigned char * beg_;
+        unsigned char * end_;
+        unsigned char * cur_;
     };
 
-    struct Chunk
-    {
-        unsigned int blockSize;
-        BlockList free;
-        BlockList used;
-    };
-
-public:
-    MemPool(void * m_beg, void * m_end) :
-        m_beg(static_cast<unsigned char *>(m_beg)),
-        m_end(static_cast<unsigned char *>(m_end)),
-        m_cur(static_cast<unsigned char *>(m_beg))
-    {
-        init();
-    }
-
-    ~MemPool(void)
-    {
-    }
-
-    void * alloc(size_t size);
-
-    void free(void * ptr);
-
-    size_t avialableSize(void) const
-    {
-        return (m_end - m_cur);
-    }
-
-#ifdef MEMPOOL_STATISTICS
-    double usageRatio(void);
-#endif // MEMPOOL_STATISTICS
-
-private:
-    void init(void);
-
-    size_t findChunkId(size_t size);
-
-private:
-    Chunk m_chunk[29];
-    unsigned char * m_beg;
-    unsigned char * m_end;
-    unsigned char * m_cur;
-};
-
+}
