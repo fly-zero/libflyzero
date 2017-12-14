@@ -7,7 +7,7 @@
 #include <cassert>
 #include <functional>
 
-#include "FileDescriptor.h"
+#include "file_descriptor.h"
 #include "epoll.h"
 #include "TcpConnection.h"
 
@@ -53,17 +53,17 @@ namespace flyzero
         // listen on 0.0.0.0:port
         bool listen(unsigned short port);
 
-        FileDescriptor accept(void) const
+        file_descriptor accept(void) const
         {
             sockaddr addr;
             auto len = socklen_t(sizeof addr);
-            return FileDescriptor(::accept(sock_.get(), &addr, &len));
+            return file_descriptor(::accept(sock_.get(), &addr, &len));
         }
 
-        FileDescriptor accept(sockaddr_in & addr) const
+        file_descriptor accept(sockaddr_in & addr) const
         {
             auto len = socklen_t(sizeof addr);
-            return FileDescriptor(::accept(sock_.get(), reinterpret_cast<sockaddr *>(&addr), &len));
+            return file_descriptor(::accept(sock_.get(), reinterpret_cast<sockaddr *>(&addr), &len));
         }
 
         void close(void)
@@ -103,7 +103,7 @@ namespace flyzero
         void on_close(void) override { }
 
     private:
-        FileDescriptor sock_;
+        file_descriptor sock_;
         epoll epoll_;
     };
 

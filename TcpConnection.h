@@ -1,6 +1,6 @@
 #pragma once
 
-#include "FileDescriptor.h"
+#include "file_descriptor.h"
 #include "epoll.h"
 
 namespace flyzero
@@ -12,16 +12,16 @@ namespace flyzero
     public:
         constexpr TcpConnection(void) = default;
 
-        explicit TcpConnection(const FileDescriptor & sock) noexcept
+        explicit TcpConnection(const file_descriptor & sock) noexcept
             : sock_(sock)
         {
-            sock_.setNonblocking();
+            sock_.set_nonblocking();
         }
 
-        explicit TcpConnection(FileDescriptor && sock) noexcept
+        explicit TcpConnection(file_descriptor && sock) noexcept
             : sock_(std::move(sock))
         {
-            sock_.setNonblocking();
+            sock_.set_nonblocking();
         }
 
         TcpConnection(const TcpConnection &) = default;
@@ -41,7 +41,7 @@ namespace flyzero
         }
 
     private:
-        FileDescriptor sock_;
+        file_descriptor sock_;
     };
 
 }

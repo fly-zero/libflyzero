@@ -6,7 +6,7 @@
 #include <cassert>
 #include <functional>
 
-#include "FileDescriptor.h"
+#include "file_descriptor.h"
 
 namespace flyzero
 {
@@ -109,7 +109,7 @@ namespace flyzero
         void run(std::size_t const size, int const timeout, void (*on_timeout)(void *), void *arg) const;
 
     private:
-        FileDescriptor epfd_{ ::epoll_create1(0) };
+        file_descriptor epfd_{ ::epoll_create1(0) };
         alloc_type alloc_{ ::malloc };
         dealloc_type dealloc_{ ::free };
         std::size_t size_{ 0 };
