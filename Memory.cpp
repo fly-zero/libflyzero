@@ -1,18 +1,9 @@
-#include "Memory.h"
+#include "memory.h"
 
 namespace flyzero
 {
 
-    unsigned int Memory::SearchCharacters(const void * src, unsigned int srclen, const char * str, unsigned int strlen)
-    {
-        for (unsigned int i = 0; i < srclen; ++i)
-            for (unsigned int j = 0; j < strlen; ++j)
-                if (((char *)src)[i] == str[j])
-                    return i;
-        return static_cast<unsigned int>(-1);
-    }
-
-    uint64_t Memory::ReverseByteOrder(uint64_t val)
+    uint64_t memory::reverse_byte_order(const uint64_t val)
     {
         return (((val & 0xFF00000000000000) >> 56)
             | ((val & 0x00FF000000000000) >> 40)
@@ -24,7 +15,7 @@ namespace flyzero
             | ((val & 0x00000000000000FF) << 56));
     }
 
-    uint32_t Memory::ReverseByteOrder(uint32_t val)
+    uint32_t memory::reverse_byte_order(const uint32_t val)
     {
         return (((val & 0xFF000000) >> 24)
             | ((val & 0x00FF0000) >> 8)

@@ -22,33 +22,33 @@ namespace flyzero
         explicit ipv4_addr(const char * ip)
         {
             assert(ip);
-            if (1 != inet_pton(AF_INET, ip, &addr_.in_addr_))
+            if (1 != inet_pton(AF_INET, ip, &addr_.in_addr))
                 memset(&addr_, 0, sizeof addr_);
         }
 
         explicit ipv4_addr(struct in_addr const addr)
         {
-            addr_.in_addr_ = addr;
+            addr_.in_addr = addr;
         }
 
         struct in_addr & in_addr()
         {
-            return addr_.in_addr_;
+            return addr_.in_addr;
         }
 
         const struct in_addr & in_addr() const
         {
-            return addr_.in_addr_;
+            return addr_.in_addr;
         }
 
         bool operator==(const ipv4_addr & other) const
         {
-            return addr_.in_addr_.s_addr == other.addr_.in_addr_.s_addr;
+            return addr_.in_addr.s_addr == other.addr_.in_addr.s_addr;
         }
 
         std::size_t hash() const
         {
-            return addr_.in_addr_.s_addr;
+            return addr_.in_addr.s_addr;
         }
 
     private:
@@ -56,8 +56,8 @@ namespace flyzero
         {
             static_assert(sizeof (struct in_addr) == sizeof (byte_array),
                 "size of in_addr and ByteArray4 are different");
-            struct in_addr in_addr_;
-            byte_array bytes_;
+            struct in_addr in_addr;
+            byte_array bytes;
         } addr_;
     };
 }

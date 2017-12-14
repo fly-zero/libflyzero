@@ -1,5 +1,5 @@
 #include "hex.h"
-#include "Memory.h"
+#include "memory.h"
 
 namespace flyzero
 {
@@ -102,7 +102,7 @@ namespace flyzero
             size = out - reinterpret_cast<char *>(buffer);
             return ErrorCode::FZ_SUCCESS;
         }
-        else
-            return ErrorCode::FZ_INVALID_PARAM;
+
+        return ErrorCode::FZ_INVALID_PARAM;
     }
 }

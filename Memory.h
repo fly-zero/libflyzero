@@ -4,12 +4,10 @@
 
 namespace flyzero
 {
-    class Memory
+    class memory
     {
     public:
-        static unsigned int SearchCharacters(const void *src, unsigned int srclen, const char *str, unsigned int strlen);
-
-        static uint64_t ReverseByteOrder(uint64_t val);
-        static uint32_t ReverseByteOrder(uint32_t val);
+        static uint64_t reverse_byte_order(const uint64_t val);
+        static uint32_t reverse_byte_order(const uint32_t val);
     };
 }

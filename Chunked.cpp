@@ -1,6 +1,6 @@
 #include "Chunked.h"
 #include "hex.h"
-#include "Memory.h"
+#include "memory.h"
 
 namespace flyzero
 {
@@ -41,7 +41,7 @@ namespace flyzero
             else
             { // new chunked following
               // skip leading empty lines
-                while (0 == (pos = Memory::SearchCharacters(chunked_data, chunked_len, "\r\n ", 3)))
+                while (0 == (pos = memory::search_characters(chunked_data, chunked_len, "\r\n ", 3)))
                 {
                     ++chunked_data;
                     --chunked_len;
@@ -59,7 +59,7 @@ namespace flyzero
                 chunked_len -= pos;
 
                 // skip empty lines following after chunked length
-                while (0 == (pos = Memory::SearchCharacters(chunked_data, chunked_len, "\r\n", 2)))
+                while (0 == (pos = memory::search_characters(chunked_data, chunked_len, "\r\n", 2)))
                 {
                     ++chunked_data;
                     --chunked_len;
@@ -115,7 +115,7 @@ namespace flyzero
             else
             { // new chunked following
                 // skip leading empty lines
-                while (0 == (pos = Memory::SearchCharacters(chunked_data, chunked_len, "\r\n ", 3)))
+                while (0 == (pos = memory::search_characters(chunked_data, chunked_len, "\r\n ", 3)))
                 {
                     ++chunked_data;
                     --chunked_len;
@@ -133,7 +133,7 @@ namespace flyzero
                 chunked_len -= pos;
 
                 // skip empty lines following after chunked length
-                while (0 == (pos = Memory::SearchCharacters(chunked_data, chunked_len, "\r\n", 2)))
+                while (0 == (pos = memory::search_characters(chunked_data, chunked_len, "\r\n", 2)))
                 {
                     ++chunked_data;
                     --chunked_len;
