@@ -15,47 +15,29 @@ namespace flyzero
     {
         size = align8(size);
 
-        const auto idx = find_chunk_id(size);
+        const auto idx = find_block_manager(size);
+
+        void * ret = nullptr;
 
         if (idx != -1)
         {
-            auto & chunk = chunks_[idx];
-            auto & free = chunk.free_list;
-            auto & used = chunk.used_list;
-
-            if (!free.empty())
-            {
-                const auto block = free.pop();
-                used.push(block);
-                return &block[1];
-            }
-
-            const auto impl_size = chunk.get_impl_size();
-
-            if (avialable_size() >= impl_size)
-            {
-                auto block = reinterpret_cast<block_node *>(cur_);
-                block->chunk = &chunk;
-                used.push(block);
-                *reinterpret_cast<std::size_t *>(cur_ + sizeof(block_node) + chunk.block_size) = block->calc_checksum();
-                cur_ += size;
-                return &block[1];
-            }
+            auto & manager = managers_[idx];
+            ret = manager.free_list.empty() ? alloc_new(manager) : alloc_exist(manager);
         }
 
-        return nullptr;
+        return ret;
     }
 
     void mempool::free(void * ptr)
     {
-        const auto block = reinterpret_cast<block_node *>(reinterpret_cast<unsigned char *>(ptr)-sizeof (block_node));
+        const auto block = reinterpret_cast<block_header *>(reinterpret_cast<unsigned char *>(ptr)-sizeof (block_header));
         if (block->check())
         {
-            chunk & chunk = *block->chunk;
-            if (block->checksum == *reinterpret_cast<std::size_t *>(reinterpret_cast<unsigned char *>(ptr)+chunk.block_size))
+            auto & manager = *block->mgr;
+            if (block->checksum == *reinterpret_cast<std::size_t *>(reinterpret_cast<unsigned char *>(ptr)+manager.block_size))
             {
-                chunk.used_list.detach(block);
-                chunk.free_list.push(block);
+                manager.used_list.detach(block);
+                manager.free_list.push(block);
             }
             else
             {
@@ -75,19 +57,38 @@ namespace flyzero
 
     void mempool::init()
     {
-        for (auto i = 0; i < chunks_.size(); ++i)
-            chunks_[i].block_size = std::size_t(1) << (i + 3);
+        for (auto i = 0; i < managers_.size(); ++i)
+            managers_[i].block_size = std::size_t(8) << i;
     }
 
-    std::size_t mempool::find_chunk_id(const std::size_t size) const
+    std::size_t mempool::find_block_manager(const std::size_t size) const
     {
-        for (std::size_t i = 0; i < chunks_.size(); ++i)
-            if (size <= chunks_[i].block_size)
+        for (std::size_t i = 0; i < managers_.size(); ++i)
+            if ((8 << i) > size)
                 return i;
         return -1;
     }
 
-    mempool::block_node * mempool::block_list::pop(void)
+    void * mempool::alloc_new(block_manager & manager)
+    {
+        void * ret = nullptr;
+        const auto impl_size = manager.get_impl_size();
+
+        if (free_size() >= impl_size)
+        {
+            const auto block = reinterpret_cast<block_header *>(cur_);
+            cur_ += impl_size;
+            block->mgr = &manager;
+            manager.used_list.push(block);
+            block->checksum = block->calc_checksum();
+            *reinterpret_cast<std::size_t *>(cur_ - sizeof (std::size_t)) = block->checksum;
+            ret = &block[1];
+        }
+
+        return ret;
+    }
+
+    mempool::block_header * mempool::block_list::pop()
     {
         const auto ret = head_;
         head_ = head_->next;
@@ -97,7 +98,7 @@ namespace flyzero
         return ret;
     }
 
-    void mempool::block_list::push(block_node * node)
+    void mempool::block_list::push(block_header * node)
     {
         node->prev = nullptr;
         node->next = head_;
@@ -107,7 +108,7 @@ namespace flyzero
         ++length_;
     }
 
-    void mempool::block_list::detach(block_node * node)
+    void mempool::block_list::detach(block_header * node)
     {
         const auto prev = node->prev;
         const auto next = node->next;

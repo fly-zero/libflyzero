@@ -3,7 +3,7 @@
 /****************************************************************************\
  * Chunk Array:                                                             *
  * +----------+----------+-----------+----------+----------+                *
- * | chunk[0] | chunk[1] |    ...    | chunk[i] |    ...   |                *
+ * | block_mgr[0] | block_mgr[1] |    ...    | block_mgr[i] |    ...   |                *
  * +----------+----------+-----------+----------+----------+                *
  *                                                                          *
  * Block:                                                                   *
@@ -29,23 +29,23 @@ namespace flyzero
 
     class mempool
     {
-        struct chunk;
+        struct block_manager;
 
-        struct block_node
+        struct block_header
         {
-            chunk * chunk;
-            block_node * prev;
-            block_node * next;
+            struct block_manager * mgr;
+            block_header * prev;
+            block_header * next;
             std::size_t checksum;
 
-            std::size_t calc_checksum()
+            std::size_t calc_checksum() const
             {
-                return checksum = reinterpret_cast<std::size_t>(chunk) ^ reinterpret_cast<std::size_t>(this);
+                return reinterpret_cast<std::size_t>(mgr) ^ reinterpret_cast<std::size_t>(this);
             }
 
             bool check() const
             {
-                return checksum == (reinterpret_cast<std::size_t>(chunk) ^ reinterpret_cast<std::size_t>(this));
+                return checksum == calc_checksum();
             }
         };
 
@@ -57,11 +57,11 @@ namespace flyzero
                 return (head_ == nullptr);
             }
 
-            block_node * pop(void);
+            block_header * pop(void);
 
-            void push(block_node * node);
+            void push(block_header * node);
 
-            void detach(block_node * node);
+            void detach(block_header * node);
 
             std::size_t length() const
             {
@@ -69,12 +69,12 @@ namespace flyzero
             }
 
         private:
-            block_node * head_{ nullptr };
+            block_header * head_{ nullptr };
 
             std::size_t length_{ 0 };
         };
 
-        struct chunk
+        struct block_manager
         {
             unsigned int block_size;
             block_list free_list;
@@ -82,28 +82,26 @@ namespace flyzero
 
             std::size_t get_impl_size() const
             {
-                return sizeof (block_node) + block_size + sizeof (std::size_t);
+                return sizeof (block_header) + block_size + sizeof (std::size_t);
             }
         };
 
     public:
-        mempool(void * m_beg, void * m_end) :
-            beg_(static_cast<unsigned char *>(m_beg)),
-            end_(static_cast<unsigned char *>(m_end)),
-            cur_(static_cast<unsigned char *>(m_beg))
+        mempool(void * beg, void * end) :
+            beg_(static_cast<unsigned char *>(beg)),
+            end_(static_cast<unsigned char *>(end)),
+            cur_(static_cast<unsigned char *>(beg))
         {
             init();
         }
 
-        ~mempool()
-        {
-        }
+        ~mempool() = default;
 
         void * alloc(std::size_t size);
 
         void free(void * ptr);
 
-        std::size_t avialable_size() const
+        std::size_t free_size() const
         {
             return end_ - cur_;
         }
@@ -113,10 +111,19 @@ namespace flyzero
     protected:
         void init();
 
-        std::size_t find_chunk_id(const std::size_t size) const;
+        std::size_t find_block_manager(const std::size_t size) const;
+
+        void * alloc_new(block_manager & manager);
+
+        static void * alloc_exist(block_manager & manager)
+        {
+            const auto block = manager.free_list.pop();
+            manager.used_list.push(block);
+            return &block[1];
+        }
 
     private:
-        std::array<chunk, 29> chunks_;
+        std::array<block_manager, 29> managers_;
         unsigned char * beg_;
         unsigned char * end_;
         unsigned char * cur_;
