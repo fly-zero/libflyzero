@@ -6,36 +6,36 @@
 namespace flyzero
 {
 
-    class TcpConnection
+    class tcp_connection
         : public epoll_listener
     {
     public:
-        constexpr TcpConnection(void) = default;
+        constexpr tcp_connection() = default;
 
-        explicit TcpConnection(const file_descriptor & sock) noexcept
+        explicit tcp_connection(const file_descriptor & sock) noexcept
             : sock_(sock)
         {
             sock_.set_nonblocking();
         }
 
-        explicit TcpConnection(file_descriptor && sock) noexcept
+        explicit tcp_connection(file_descriptor && sock) noexcept
             : sock_(std::move(sock))
         {
             sock_.set_nonblocking();
         }
 
-        TcpConnection(const TcpConnection &) = default;
+        tcp_connection(const tcp_connection &) = default;
 
-        TcpConnection(TcpConnection &&) = default;
+        tcp_connection(tcp_connection &&) = default;
 
-        virtual ~TcpConnection(void) = default;
+        virtual ~tcp_connection() = default;
 
-        int get_fd(void) const noexcept override
+        int get_fd() const noexcept override
         {
             return sock_.get();
         }
 
-        bool operator<(const TcpConnection & other) const noexcept
+        bool operator<(const tcp_connection & other) const noexcept
         {
             return sock_ < other.sock_;
         }

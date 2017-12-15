@@ -88,12 +88,12 @@ namespace flyzero
 
         virtual void on_timeout() = 0;
 
-        void add_connection(TcpConnection & connection, const uint32_t events)
+        void add_connection(tcp_connection & connection, const uint32_t events)
         {
             epoll_.add(connection, events);
         }
 
-        void remove_connection(const TcpConnection & connection)
+        void remove_connection(const tcp_connection & connection)
         {
             epoll_.remove(connection);
         }
