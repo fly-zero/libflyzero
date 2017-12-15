@@ -2,7 +2,7 @@
 
 namespace flyzero
 {
-    enum class ErrorCode
+    enum class errcode
     {
         FZ_SUCCESS = 0,
         FZ_NO_BUFFER,			// 提供的缓冲区空间不足
