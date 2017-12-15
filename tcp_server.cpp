@@ -1,12 +1,12 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#include "TcpServer.h"
+#include "tcp_server.h"
 
 namespace flyzero
 {
 
-    bool TcpServer::listen(unsigned short port)
+    bool tcp_server::listen(const unsigned short port)
     {
         file_descriptor sock(::socket(AF_INET, SOCK_STREAM, 0));
 

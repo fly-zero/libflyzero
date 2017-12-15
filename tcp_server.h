@@ -14,36 +14,36 @@
 namespace flyzero
 {
 
-    class TcpServer
+    class tcp_server
         : public epoll_listener
     {
     public:
-        using alloc_type = std::function<void*(size_t)>;
+        using alloc_type = std::function<void*(std::size_t)>;
         using dealloc_type = std::function<void(void *)>;
 
-        TcpServer(void) = default;
+        tcp_server() = default;
 
-        TcpServer(const alloc_type & alloc, const dealloc_type & dealloc)
+        tcp_server(const alloc_type & alloc, const dealloc_type & dealloc)
             : epoll_(alloc, dealloc)
         {
             assert(alloc);
             assert(dealloc);
         }
 
-        TcpServer(const TcpServer &) = default;
+        tcp_server(const tcp_server &) = default;
 
-        TcpServer(TcpServer &&) = default;
+        tcp_server(tcp_server &&) = default;
 
-        virtual ~TcpServer(void) = default;
+        virtual ~tcp_server() = default;
 
-        TcpServer & operator=(const TcpServer & other)
+        tcp_server & operator=(const tcp_server & other)
         {
             if (this != &other)
                 sock_ = other.sock_;
             return *this;
         }
 
-        TcpServer & operator=(TcpServer && other) noexcept
+        tcp_server & operator=(tcp_server && other) noexcept
         {
             if (this != &other)
                 sock_ = std::move(other.sock_);
@@ -51,9 +51,9 @@ namespace flyzero
         }
 
         // listen on 0.0.0.0:port
-        bool listen(unsigned short port);
+        bool listen(const unsigned short port);
 
-        file_descriptor accept(void) const
+        file_descriptor accept() const
         {
             sockaddr addr;
             auto len = socklen_t(sizeof addr);
@@ -66,41 +66,41 @@ namespace flyzero
             return file_descriptor(::accept(sock_.get(), reinterpret_cast<sockaddr *>(&addr), &len));
         }
 
-        void close(void)
+        void close()
         {
             sock_.close();
         }
 
-        int get_fd(void) const override
+        int get_fd() const override
         {
             return sock_.get();
         }
 
-        void run(size_t size, int timeout)
+        void run(const std::size_t size, const int timeout)
         {
-            epoll_.run(size, timeout, onTimeout, this);
+            epoll_.run(size, timeout, on_timeout, this);
         }
 
-        static void onTimeout(void * tcpServer)
+        static void on_timeout(void * server)
         {
-            static_cast<TcpServer *>(tcpServer)->onTimeout();
+            static_cast<tcp_server *>(server)->on_timeout();
         }
 
-        virtual void onTimeout(void) = 0;
+        virtual void on_timeout() = 0;
 
-        void addConnection(TcpConnection & connection, uint32_t events)
+        void add_connection(TcpConnection & connection, const uint32_t events)
         {
             epoll_.add(connection, events);
         }
 
-        void removeConnection(const TcpConnection & connection)
+        void remove_connection(const TcpConnection & connection)
         {
             epoll_.remove(connection);
         }
 
-        void on_write(void) override { }
+        void on_write() override { }
 
-        void on_close(void) override { }
+        void on_close() override { }
 
     private:
         file_descriptor sock_;
