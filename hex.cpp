@@ -38,50 +38,50 @@ namespace flyzero
     }
 
     // real work function
-    static ErrorCode hex_str(const char * str, unsigned int const length, hex_impl::value & val)
+    static errcode hex_str(const char * str, unsigned int const length, hex_impl::value & val)
     {
         val.uint64_val = 0;
         for (unsigned int i = 0; i < length; ++i)
         {
             auto const tmp = static_cast<unsigned int>(hex_map[str[i]]);
             if (-1 == tmp)
-                return ErrorCode::FZ_INVALID_PARAM;
+                return errcode::invalid_param;
             val.uint64_val = tmp + (val.uint64_val << 4);
         }
-        return ErrorCode::FZ_SUCCESS;
+        return errcode::ok;
     }
 
-    ErrorCode hex::hex_str(const char * str, unsigned int const length, uint64_t & val)
+    errcode hex::hex_str(const char * str, unsigned int const length, uint64_t & val)
     {
-        ErrorCode ret;
+        errcode ret;
         hex_impl::value res;
-        if (ErrorCode::FZ_SUCCESS == (ret = flyzero::hex_str(str, length, res)))
+        if (errcode::ok == (ret = flyzero::hex_str(str, length, res)))
             val = res.uint64_val;
         return ret;
     }
 
-    ErrorCode hex::hex_str(const char * str, unsigned int const length, uint32_t & val)
+    errcode hex::hex_str(const char * str, unsigned int const length, uint32_t & val)
     {
-        ErrorCode ret;
+        errcode ret;
         hex_impl::value res;
-        if (ErrorCode::FZ_SUCCESS == (ret = flyzero::hex_str(str, length, res)))
+        if (errcode::ok == (ret = flyzero::hex_str(str, length, res)))
             val = res.uint32_val;
         return ret;
     }
 
-    ErrorCode hex::hex_str(const char * str, unsigned int const length, uint8_t & val)
+    errcode hex::hex_str(const char * str, unsigned int const length, uint8_t & val)
     {
-        ErrorCode ret;
+        errcode ret;
         hex_impl::value res;
-        if (ErrorCode::FZ_SUCCESS == (ret = flyzero::hex_str(str, length, res)))
+        if (errcode::ok == (ret = flyzero::hex_str(str, length, res)))
             val = res.uint8_val;
         return ret;
     }
 
-    ErrorCode hex::hex_str(const char * str, unsigned int length, void * buffer, unsigned int & size)
+    errcode hex::hex_str(const char * str, unsigned int length, void * buffer, unsigned int & size)
     {
         if (length / 2 > size)
-            return ErrorCode::FZ_NO_BUFFER;
+            return errcode::no_buffer;
 
         auto in = str;
         auto out = reinterpret_cast<char *>(buffer);
@@ -100,9 +100,9 @@ namespace flyzero
         if (0 == length)
         {
             size = out - reinterpret_cast<char *>(buffer);
-            return ErrorCode::FZ_SUCCESS;
+            return errcode::ok;
         }
 
-        return ErrorCode::FZ_INVALID_PARAM;
+        return errcode::invalid_param;
     }
 }

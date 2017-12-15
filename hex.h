@@ -8,9 +8,9 @@ namespace flyzero
     class hex
     {
     public:
-        static ErrorCode hex_str(const char *str, unsigned int length, uint64_t &val);
-        static ErrorCode hex_str(const char *str, unsigned int length, uint32_t &val);
-        static ErrorCode hex_str(const char *str, unsigned int length, uint8_t &val);
-        static ErrorCode hex_str(const char *str, unsigned int length, void * buffer, unsigned int & size);
+        static errcode hex_str(const char *str, unsigned int length, uint64_t &val);
+        static errcode hex_str(const char *str, unsigned int length, uint32_t &val);
+        static errcode hex_str(const char *str, unsigned int length, uint8_t &val);
+        static errcode hex_str(const char *str, unsigned int length, void * buffer, unsigned int & size);
     };
 }
