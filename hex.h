@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>	// c++11 is needed
-#include "Error.h"
+#include "error.h"
 
 namespace flyzero
 {
