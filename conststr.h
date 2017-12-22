@@ -16,13 +16,15 @@ namespace flyzero
             return n < length_ ? str_[n] : throw std::out_of_range("");
         }
 
-        const char * c_str() const { return str_; }
+        constexpr const char * c_str() const { return str_; }
 
         constexpr std::size_t length() const { return length_; }
 
-        const char * begin() const { return str_; }
+        constexpr const char * begin() const { return str_; }
 
-        const char * end() const { return str_ + length_; }
+        constexpr const char * end() const { return str_ + length_; }
+
+        constexpr bool empty() const { return length_ == 0; }
 
     private:
         const char* str_;
