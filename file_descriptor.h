@@ -88,6 +88,8 @@ namespace flyzero
             return fd_ < other.fd_;
         }
 
+        size_t write(const char * buff, size_t size) const;
+
     private:
         int fd_{ -1 };
     };
