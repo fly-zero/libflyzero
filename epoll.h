@@ -86,22 +86,12 @@ namespace flyzero
             return *this;
         }
 
-        void add(epoll_listener & iepoll, uint32_t const events)
+        bool add(epoll_listener & iepoll, uint32_t const events)
         {
             epoll_event ev;
             ev.events = events;
             ev.data.ptr = &iepoll;
-            epoll_ctl(epfd_.get(), EPOLL_CTL_ADD, iepoll.get_fd(), &ev);
-            ++size_;
-        }
-
-        void add(epoll_listener * iepoll, const uint32_t events)
-        {
-            epoll_event ev;
-            ev.events = events;
-            ev.data.ptr = iepoll;
-            epoll_ctl(epfd_.get(), EPOLL_CTL_ADD, iepoll->get_fd(), &ev);
-            ++size_;
+            return epoll_ctl(epfd_.get(), EPOLL_CTL_ADD, iepoll.get_fd(), &ev) == 0 ? (++size_, true) : false;
         }
 
         void remove(const epoll_listener & iepoll)
