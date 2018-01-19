@@ -94,13 +94,12 @@ namespace flyzero
             return epoll_ctl(epfd_.get(), EPOLL_CTL_ADD, iepoll.get_fd(), &ev) == 0 ? (++size_, true) : false;
         }
 
-        void remove(const epoll_listener & iepoll)
+        bool remove(const epoll_listener & iepoll)
         {
-            epoll_ctl(epfd_.get(), EPOLL_CTL_DEL, iepoll.get_fd(), nullptr);
-            --size_;
+            return epoll_ctl(epfd_.get(), EPOLL_CTL_DEL, iepoll.get_fd(), nullptr) == 0 ? (--size_, true) : false;
         }
 
-        std::size_t size() const
+        std::size_t size(void) const
         {
             return size_;
         }
