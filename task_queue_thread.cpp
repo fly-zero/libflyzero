@@ -18,7 +18,7 @@ namespace flyzero
 
     void task_queue_thread::thread_routine(task_queue_thread* obj)
     {
-        for (; ;)
+        for ( ; ; )
         {
             if (obj->queue_.empty())
             {
