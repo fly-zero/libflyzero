@@ -99,7 +99,7 @@ namespace flyzero
         }
 
         template <typename...Args>
-        bool emplace_back(Args&&...args)
+        bool push(Args&&...args)
         {
             if (full())
                 return false;
@@ -109,7 +109,7 @@ namespace flyzero
             return true;
         }
 
-        void pop_front(void)
+        void pop(void)
         {
             if (empty())
                 return;
