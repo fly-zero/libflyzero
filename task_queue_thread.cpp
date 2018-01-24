@@ -3,7 +3,7 @@
 namespace flyzero
 {
 
-    bool task_queue_thread::push(task_handler* th, void (* deleter)(task_handler*))
+    bool task_queue_thread::push(task* th, void (* deleter)(task*))
     {
         if (queue_.full())
             return false;
@@ -16,21 +16,21 @@ namespace flyzero
         return true;
     }
 
-    void task_queue_thread::thread_routine(task_queue_thread* obj)
+    void task_queue_thread::thread_routine(task_queue_thread & obj)
     {
         for ( ; ; )
         {
-            if (obj->queue_.empty())
+            if (obj.queue_.empty())
             {
-                obj->sema_.wait();
+                obj.sema_.wait();
                 continue;
             }
 
-            obj->front()->run();
+            obj.front()->run(obj);
 
-            obj->pop();
+            obj.pop();
 
-            ++obj->processed_task_num_;
+            ++obj.processed_task_num_;
         }
     }
 
