@@ -26,11 +26,14 @@ namespace flyzero
                 continue;
             }
 
-            obj.front()->run(obj);
+            auto fin = obj.front()->run(obj);
 
             obj.pop();
 
             ++obj.processed_task_num_;
+
+            if (!fin)
+                break;
         }
     }
 
