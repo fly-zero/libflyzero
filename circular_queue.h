@@ -38,13 +38,14 @@ namespace flyzero
     public:
         explicit circular_queue(std::size_t capacity, const allocator_type & alloc = allocator_type())
             : alloc_(alloc)
+            , buffer_(nullptr, deleter_type(*this))
             , ridx_(0)
             , widx_(0)
         {
             capacity_ = 1;
-            for (size_t i = 0; i < 32 && capacity_ < capacity; ++I)
+            for (size_t i = 0; i < 32 && capacity_ < capacity; ++i)
                 capacity_ <<= 1;
-            buffer_ = pointer(initalize(capacity_), deleter_type(*this));
+            buffer_.reset(initalize(capacity_));
         }
 
         circular_queue(const circular_queue &) = delete;
