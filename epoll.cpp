@@ -10,9 +10,9 @@ namespace flyzero
     {
         auto const events = reinterpret_cast<epoll_event *>(alloc_(size * sizeof (epoll_event)));
 
-        for (int nev; ; )
+        while (true)
         {
-            nev = epoll_wait(epfd_.get(), events, size, timeout);
+            const auto nev = epoll_wait(epfd_.get(), events, size, timeout);
 
             if (nev == -1)
             {
