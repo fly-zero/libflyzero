@@ -1,3 +1,4 @@
+#include <cerrno>
 #include <iostream>
 
 #include "epoll.h"
@@ -9,8 +10,17 @@ namespace flyzero
     {
         auto const events = reinterpret_cast<epoll_event *>(alloc_(size * sizeof (epoll_event)));
 
-        for (int nev; (nev = epoll_wait(epfd_.get(), events, size, timeout)) != -1; )
+        for (int nev; ; )
         {
+            nev = epoll_wait(epfd_.get(), events, size, timeout);
+
+            if (nev == -1)
+            {
+                if (errno == EINTR)
+                    continue;
+                break;
+            }
+
             if (nev == 0)
             {
                 if (on_timeout)
