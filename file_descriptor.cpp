@@ -12,6 +12,8 @@ namespace flyzero
                 return size_t(-1);
             pos += nwrite;
         }
+
+        return size;
     }
 
 }
