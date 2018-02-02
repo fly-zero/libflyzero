@@ -33,11 +33,12 @@ namespace flyzero
 
     public:
         explicit task_queue_thread(std::size_t queue_capacity, const alloc_type & alloc = malloc, const dealloc_type & dealloc = free)
-            : std::thread(thread_routine, std::ref(*this))
-            , queue_(queue_capacity, flyzero::allocator<task_pointer>(alloc, dealloc))
+            : queue_(queue_capacity, flyzero::allocator<task_pointer>(alloc, dealloc))
             , processed_task_num_(0)
             , sema_(0)
         {
+            // start the thread after queue and sema_ are ready
+            this->std::thread::operator=(std::thread(thread_routine, std::ref(*this)));
         }
 
         bool push(task* th, void (*deleter)(task*));
