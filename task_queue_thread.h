@@ -37,7 +37,7 @@ namespace flyzero
             , processed_task_num_(0)
             , sema_(0)
         {
-            // start the thread after queue and sema_ are ready
+            // start the thread after queue and sema are ready
             this->std::thread::operator=(std::thread(thread_routine, std::ref(*this)));
         }
 
