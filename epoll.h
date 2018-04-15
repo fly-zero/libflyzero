@@ -14,7 +14,17 @@ namespace flyzero
     class epoll_listener
     {
     public:
+        epoll_listener() = default;
+
+        epoll_listener(const epoll_listener &) = default;
+
+        epoll_listener(epoll_listener &&) = default;
+
         virtual ~epoll_listener() = default;
+
+        epoll_listener & operator=(const epoll_listener &) = default;
+
+        epoll_listener & operator=(epoll_listener &&) = default;
 
         // readable event callback
         virtual void on_read() = 0;
@@ -32,33 +42,17 @@ namespace flyzero
     class epoll final
     {
     public:
-        using alloc_type = std::function<void*(std::size_t)>;
-        using dealloc_type = std::function<void(void *)>;
-
-        enum event { epoll_read = EPOLLIN, epoll_write = EPOLLOUT, epoll_close = EPOLLRDHUP, epoll_edge = EPOLLET };
+        enum event { READ = EPOLLIN, WRITE = EPOLLOUT, CLOSE = EPOLLRDHUP, EDGE = EPOLLET };
 
         epoll() = default;
 
-        epoll(const alloc_type & alloc, const dealloc_type & dealloc)
-            : epfd_(::epoll_create1(0))
-            , alloc_(alloc)
-            , dealloc_(dealloc)
-        {
-            assert(alloc);
-            assert(dealloc);
-        }
-
         epoll(const epoll & other)
             : epfd_(other.epfd_)
-            , alloc_(other.alloc_)
-            , dealloc_(other.dealloc_)
         {
         }
 
         epoll(epoll && other) noexcept
             : epfd_(std::move(other.epfd_))
-            , alloc_(std::move(other.alloc_))
-            , dealloc_(std::move(other.dealloc_))
         {
         }
 
@@ -67,28 +61,20 @@ namespace flyzero
         epoll & operator=(const epoll & other)
         {
             if (this != &other)
-            {
                 epfd_ = other.epfd_;
-                alloc_ = other.alloc_;
-                dealloc_ = other.dealloc_;
-            }
             return *this;
         }
 
         epoll & operator=(epoll && other) noexcept
         {
             if (this != &other)
-            {
                 epfd_ = std::move(other.epfd_);
-                alloc_ = other.alloc_;
-                dealloc_ = other.dealloc_;
-            }
             return *this;
         }
 
         bool add(epoll_listener & iepoll, uint32_t const events)
         {
-            epoll_event ev;
+            epoll_event ev; // NOLINT
             ev.events = events;
             ev.data.ptr = &iepoll;
             return epoll_ctl(epfd_.get(), EPOLL_CTL_ADD, iepoll.get_fd(), &ev) == 0 ? (++size_, true) : false;
@@ -108,8 +94,6 @@ namespace flyzero
 
     private:
         file_descriptor epfd_{ ::epoll_create1(0) };
-        alloc_type alloc_{ ::malloc };
-        dealloc_type dealloc_{ ::free };
         std::size_t size_{ 0 };
     };
 

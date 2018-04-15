@@ -17,7 +17,7 @@ namespace flyzero
         }
 
         file_descriptor(const file_descriptor & other) noexcept
-            : fd_(other.fd_ == -1 ? -1 : ::dup(other.fd_))
+            : fd_(other.fd_ == -1 ? -1 : ::fcntl(other.fd_, F_DUPFD, 0))
         {
         }
 
@@ -27,15 +27,9 @@ namespace flyzero
             other.fd_ = -1;
         }
 
-        ~file_descriptor() noexcept
-        {
-            if (fd_ >= 0) ::close(fd_);
-        }
+        ~file_descriptor() noexcept { if (fd_ >= 0) ::close(fd_); }
 
-        int get() const noexcept
-        {
-            return fd_;
-        }
+        int get() const noexcept { return fd_; }
 
         void close() noexcept
         {
@@ -43,10 +37,7 @@ namespace flyzero
             fd_ = -1;
         }
 
-        file_descriptor clone() const noexcept
-        {
-            return file_descriptor(::dup(fd_));
-        }
+        file_descriptor clone() const noexcept { return file_descriptor(::fcntl(fd_, F_DUPFD, 0)); }
 
         bool set_nonblocking() const noexcept
         {
@@ -56,20 +47,14 @@ namespace flyzero
             return fcntl(fd_, F_SETFL, ret | O_NONBLOCK) != -1;
         }
 
-        bool operator!() const noexcept
-        {
-            return fd_ == -1;
-        }
+        bool operator!() const noexcept { return fd_ == -1; }
 
-        explicit operator bool() const noexcept
-        {
-            return fd_ != -1;
-        }
+        explicit operator bool() const noexcept { return fd_ != -1; }
 
         file_descriptor & operator=(const file_descriptor & other) noexcept
         {
             if (this != &other)
-                fd_ = other.fd_ == -1 ? -1 : ::dup(other.fd_);
+                fd_ = other.fd_ == -1 ? -1 : ::fcntl(other.fd_, F_DUPFD, 0);
             return *this;
         }
 
@@ -83,10 +68,7 @@ namespace flyzero
             return *this;
         }
 
-        bool operator<(const file_descriptor & other) const noexcept
-        {
-            return fd_ < other.fd_;
-        }
+        bool operator<(const file_descriptor & other) const noexcept { return fd_ < other.fd_; }
 
         size_t write(const char * buff, size_t size) const;
 

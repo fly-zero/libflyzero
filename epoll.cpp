@@ -8,7 +8,7 @@ namespace flyzero
 
     void epoll::run(std::size_t const size, int const timeout, void(*on_timeout)(void *), void * arg) const
     {
-        auto const events = reinterpret_cast<epoll_event *>(alloc_(size * sizeof (epoll_event)));
+        auto const events = new epoll_event[size];
 
         while (true)
         {
@@ -43,7 +43,7 @@ namespace flyzero
             }
         }
 
-        dealloc_(events);
+        delete[] events;
     }
 
 }

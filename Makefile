@@ -1,26 +1,35 @@
-SRC = $(wildcard *.cpp)
-OBJ = $(patsubst %.cpp, %.o, $(SRC))
-CFLAGS = -c -std=c++14
+SRCS = $(wildcard *.cpp)
+OBJS = $(patsubst %.cpp, %.o, $(SRCS))
+DEPS = $(OBJS:.o=.d)
+CFLAGS = -std=c++14
 TARGET = libflyzero.a
 CC = g++
+NODEPS = clean
 
-all: release
+all: debug
 
-${TARGET}: ${OBJ}
+$(TARGET): $(OBJS)
 	ar rv $@ $^
 
-%.o: %.cpp
-	${CC} ${CFLAGS} $^ -o $@
-
 .PHONY: debug
-debug: CFLAGS += -g3
-debug: ${TARGET}
+debug: CFLAGS += -g3 -O0
+debug: $(TARGET)
 
 .PHONY: release
 release: CFLAGS += -O2 -DNDEBUG
-release: ${TARGET}
+release: $(TARGET)
 
 .PHONY: clean
-
 clean:
-	rm -f ${OBJ} ${TARGET}
+	rm -f $(DEPS) $(OBJS) $(TARGET)
+
+%.o: %.cpp
+	$(CC) -c $(CFLAGS) $< -o $@
+
+%.d: %.cpp
+	$(CC) -MM $(CFLAGS) $< > $@
+
+ifeq (0, $(words $(findstring $(MAKECMDGOALS), $(NODEPS))))
+-include $(DEPS)
+endif
+

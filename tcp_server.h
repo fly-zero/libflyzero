@@ -1,6 +1,5 @@
 #pragma once
 
-#include <netinet/in.h>
 #include <arpa/inet.h>
 
 #include <memory>
@@ -9,7 +8,6 @@
 
 #include "file_descriptor.h"
 #include "epoll.h"
-#include "tcp_connection.h"
 
 namespace flyzero
 {
@@ -18,17 +16,7 @@ namespace flyzero
         : public epoll_listener
     {
     public:
-        using alloc_type = std::function<void*(std::size_t)>;
-        using dealloc_type = std::function<void(void *)>;
-
         tcp_server() = default;
-
-        tcp_server(const alloc_type & alloc, const dealloc_type & dealloc)
-            : epoll_(alloc, dealloc)
-        {
-            assert(alloc);
-            assert(dealloc);
-        }
 
         tcp_server(const tcp_server &) = default;
 
@@ -53,58 +41,34 @@ namespace flyzero
         // listen on 0.0.0.0:port
         bool listen(const unsigned short port);
 
-        file_descriptor accept() const
+        file_descriptor accept(sockaddr_storage & addr, socklen_t & addrlen) const
         {
-            sockaddr addr;
-            auto len = socklen_t(sizeof addr);
-            return file_descriptor(::accept(sock_.get(), &addr, &len));
+            assert(sizeof addr == addrlen);
+
+            return file_descriptor(::accept4(sock_.get(), reinterpret_cast<sockaddr *>(&addr), &addrlen, SOCK_NONBLOCK));
         }
 
-        file_descriptor accept(sockaddr_in & addr) const
+        void close() { sock_.close(); }
+
+        virtual void on_accept(file_descriptor && sock, const sockaddr_storage & addr, socklen_t addrlen) = 0;
+
+        void on_read() override final
         {
-            auto len = socklen_t(sizeof addr);
-            return file_descriptor(::accept(sock_.get(), reinterpret_cast<sockaddr *>(&addr), &len));
+            sockaddr_storage addr;  // NOLINT
+            socklen_t addrlen = sizeof addr;
+            auto sock = accept(addr, addrlen);
+            if (sock)
+                on_accept(std::move(sock), addr, addrlen);
         }
 
-        void close()
-        {
-            sock_.close();
-        }
+        void on_write() override final { }
 
-        int get_fd() const override
-        {
-            return sock_.get();
-        }
+        void on_close() override final { }
 
-        void run(const std::size_t size, const int timeout)
-        {
-            epoll_.run(size, timeout, on_timeout, this);
-        }
-
-        static void on_timeout(void * server)
-        {
-            static_cast<tcp_server *>(server)->on_timeout();
-        }
-
-        virtual void on_timeout() = 0;
-
-        void add_connection(tcp_connection & connection, const uint32_t events)
-        {
-            epoll_.add(connection, events);
-        }
-
-        void remove_connection(const tcp_connection & connection)
-        {
-            epoll_.remove(connection);
-        }
-
-        void on_write() override { }
-
-        void on_close() override { }
+        int get_fd() const override final { return sock_.get(); }
 
     private:
         file_descriptor sock_;
-        epoll epoll_;
     };
 
 }
