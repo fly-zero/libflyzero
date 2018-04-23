@@ -39,17 +39,14 @@ namespace flyzero
         virtual int get_fd() const = 0;
     };
 
-    class epoll final
+    class epoll
     {
     public:
         enum event { READ = EPOLLIN, WRITE = EPOLLOUT, CLOSE = EPOLLRDHUP, EDGE = EPOLLET };
 
         epoll() = default;
 
-        epoll(const epoll & other)
-            : epfd_(other.epfd_)
-        {
-        }
+        epoll(const epoll &) = delete;
 
         epoll(epoll && other) noexcept
             : epfd_(std::move(other.epfd_))
@@ -58,12 +55,7 @@ namespace flyzero
 
         ~epoll() = default;
 
-        epoll & operator=(const epoll & other)
-        {
-            if (this != &other)
-                epfd_ = other.epfd_;
-            return *this;
-        }
+        epoll & operator=(const epoll &) = delete;
 
         epoll & operator=(epoll && other) noexcept
         {
