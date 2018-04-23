@@ -31,4 +31,17 @@ namespace flyzero
 
         return true;
     }
+
+    bool tcp_server::on_read(void)
+    {
+        sockaddr_storage addr;  // NOLINT
+        socklen_t addrlen = sizeof addr;
+
+        auto sock = accept(addr, addrlen);
+        
+        if (sock)
+            on_accept(std::move(sock), addr, addrlen);
+        
+        return true;
+    }
 }

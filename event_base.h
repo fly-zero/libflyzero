@@ -26,7 +26,7 @@ namespace flyzero
 
         virtual bool on_write(void) = 0;
 
-        virtual bool on_close(void) = 0;
+        virtual void on_close(void) = 0;
 
         virtual int get_fd(void) const = 0;
     };
