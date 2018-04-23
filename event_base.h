@@ -60,6 +60,10 @@ namespace flyzero
             return 0 == epoll_ctl(epfd_.get(), EPOLL_CTL_DEL, listener.get_fd(), nullptr) ? (--size_, true) : false;
         }
 
+        operator bool(void) const { return bool(epfd_); }
+
+        bool operator!(void) const { return !epfd_; }
+
     protected:
         virtual void on_dispacth(event_listener & listener, uint32_t events) = 0;
 

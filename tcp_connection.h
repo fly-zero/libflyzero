@@ -1,13 +1,13 @@
 #pragma once
 
 #include "file_descriptor.h"
-#include "epoll.h"
+#include "event_base.h"
 
 namespace flyzero
 {
 
     class tcp_connection
-        : public epoll_listener
+        : public event_listener
     {
     public:
         constexpr tcp_connection() = default;

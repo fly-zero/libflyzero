@@ -7,36 +7,26 @@
 #include <functional>
 
 #include "file_descriptor.h"
-#include "epoll.h"
+#include "event_base.h"
 
 namespace flyzero
 {
 
     class tcp_server
-        : public epoll_listener
+        : public event_listener
     {
     public:
-        tcp_server() = default;
+        tcp_server(void) = default;
 
         tcp_server(const tcp_server &) = default;
 
         tcp_server(tcp_server &&) = default;
 
-        virtual ~tcp_server() = default;
+        virtual ~tcp_server(void) = default;
 
-        tcp_server & operator=(const tcp_server & other)
-        {
-            if (this != &other)
-                sock_ = other.sock_;
-            return *this;
-        }
+        tcp_server & operator=(const tcp_server &) = default;
 
-        tcp_server & operator=(tcp_server && other) noexcept
-        {
-            if (this != &other)
-                sock_ = std::move(other.sock_);
-            return *this;
-        }
+        tcp_server & operator=(tcp_server &&) = default;
 
         // listen on 0.0.0.0:port
         bool listen(const unsigned short port);
