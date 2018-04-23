@@ -52,7 +52,7 @@ namespace flyzero
             event.events = events;
             event.data.ptr = &listener;
             
-            return 0 == epoll_ctl(epfd_.get(), EPOLL_CTL_ADD, listener.get_fd(), event) ? (++size_, true) : false;
+            return 0 == epoll_ctl(epfd_.get(), EPOLL_CTL_ADD, listener.get_fd(), &event) ? (++size_, true) : false;
         }
 
         bool unsubscribe(event_listener & listener)
