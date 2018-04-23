@@ -11,6 +11,7 @@ namespace flyzero
     {
     public:
         typedef std::array<uint8_t, 16> byte_array;
+        typedef std::array<uint32_t, 4> dword_array;
         typedef std::array<uint64_t, 2> qword_array;
 
         const struct in6_addr & get_in_addr() const
@@ -32,7 +33,7 @@ namespace flyzero
 #else
             static_assert(sizeof (size_t) == sizeof (uint32_t),
                 "sizeof 'size_t' and 'uint32_t' are different");
-            auto & words = addr.inAddr.__in6_u.__u6_addr32;
+            auto & words = addr_.dwords;
             return words[0] ^ words[1] ^ words[2] ^ words[3];
 #endif
         }
@@ -44,6 +45,7 @@ namespace flyzero
                 "size of 'in6_addr' and 'ByteArray16' are different");
             struct in6_addr in_addr;
             byte_array bytes;
+            dword_array dwords;
             qword_array qwords;
             AddressStorage(void)
             {
