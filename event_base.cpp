@@ -6,13 +6,13 @@
 namespace flyzero
 {
 
-    void event_base::run(size_t const max_events, int const timeout)
+    void EventBase::Run(size_t const max_events, int const timeout)
     {
         auto events = new epoll_event[max_events];
 
         while (true)
         {
-            auto const nev = epoll_wait(epfd_.get(), events, max_events, timeout);
+            auto const nev = epoll_wait(epfd_.Get(), events, max_events, timeout);
 
             if (nev == -1)
             {
@@ -23,14 +23,14 @@ namespace flyzero
 
             if (0 == nev)
             {
-                on_timeout();
+                OnTimeout();
                 continue;
             }
 
             for (auto i = 0; i < nev; ++i)
-                on_dispacth(*static_cast<event_listener *>(events[i].data.ptr), events[i].events);
+                OnDispacth(*static_cast<EventListener *>(events[i].data.ptr), events[i].events);
 
-            on_loop();
+            OnLoop();
         }
 
         delete[] events;
