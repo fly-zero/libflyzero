@@ -9,7 +9,7 @@ namespace flyzero
     class file_descriptor
     {
     public:
-        constexpr file_descriptor() = default;
+        constexpr file_descriptor(void) = default;
 
         explicit file_descriptor(int const fd) noexcept
             : fd_(fd)
@@ -27,28 +27,28 @@ namespace flyzero
             other.fd_ = -1;
         }
 
-        ~file_descriptor() noexcept
+        ~file_descriptor(void) noexcept
         {
             if (fd_ >= 0) ::close(fd_);
         }
 
-        int get() const noexcept
+        int get(void) const noexcept
         {
             return fd_;
         }
 
-        void close() noexcept
+        void close(void) noexcept
         {
             ::close(fd_);
             fd_ = -1;
         }
 
-        file_descriptor clone() const noexcept
+        file_descriptor clone(void) const noexcept
         {
             return file_descriptor(::dup(fd_));
         }
 
-        bool set_nonblocking() const noexcept
+        bool set_nonblocking(void) const noexcept
         {
             auto const ret = fcntl(fd_, F_GETFL);
             if (ret == -1)
@@ -56,12 +56,12 @@ namespace flyzero
             return fcntl(fd_, F_SETFL, ret | O_NONBLOCK) != -1;
         }
 
-        bool operator!() const noexcept
+        bool operator!(void) const noexcept
         {
             return fd_ == -1;
         }
 
-        explicit operator bool() const noexcept
+        explicit operator bool(void) const noexcept
         {
             return fd_ != -1;
         }
