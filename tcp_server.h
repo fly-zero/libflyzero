@@ -7,13 +7,13 @@
 #include <functional>
 
 #include <FileDescriptor.h>
-#include "event_base.h"
+#include <EventBase.h>
 
 namespace flyzero
 {
 
     class tcp_server
-        : public event_listener
+        : public EventListener
     {
     public:
         tcp_server(void) = default;
@@ -31,27 +31,27 @@ namespace flyzero
         // listen on 0.0.0.0:port
         bool listen(const unsigned short port);
 
-        file_descriptor accept(sockaddr_storage & addr, socklen_t & addrlen) const
+        FileDescriptor accept(sockaddr_storage & addr, socklen_t & addrlen) const
         {
             assert(sizeof addr == addrlen);
 
-            return file_descriptor(::accept4(sock_.get(), reinterpret_cast<sockaddr *>(&addr), &addrlen, SOCK_NONBLOCK));
+            return FileDescriptor(::accept4(sock_.Get(), reinterpret_cast<sockaddr *>(&addr), &addrlen, SOCK_NONBLOCK));
         }
 
-        void close(void) { sock_.close(); }
+        void close(void) { sock_.Close(); }
 
-        virtual void on_accept(file_descriptor && sock, const sockaddr_storage & addr, socklen_t addrlen) = 0;
+        virtual void on_accept(FileDescriptor && sock, const sockaddr_storage & addr, socklen_t addrlen) = 0;
 
-        bool on_read(void) override final;
+        bool OnRead(void) override final;
 
-        bool on_write(void) override final { return true; }
+        bool OnWrite(void) override final { return true; }
 
-        void on_close(void) override final { }
+        void OnClose(void) override final { }
 
-        int get_fd(void) const override final { return sock_.get(); }
+        int GetFd(void) const override final { return sock_.Get(); }
 
     private:
-        file_descriptor sock_;
+        FileDescriptor sock_;
     };
 
 }
