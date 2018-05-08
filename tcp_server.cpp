@@ -28,7 +28,20 @@ namespace flyzero
             return false;
 
         sock_ = std::move(sock);
-        epoll_.add(*this, flyzero::epoll::epoll_read | flyzero::epoll::epoll_edge);
+
+        return true;
+    }
+
+    bool tcp_server::on_read(void)
+    {
+        sockaddr_storage addr;  // NOLINT
+        socklen_t addrlen = sizeof addr;
+
+        auto sock = accept(addr, addrlen);
+        
+        if (sock)
+            on_accept(std::move(sock), addr, addrlen);
+        
         return true;
     }
 }

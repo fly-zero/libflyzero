@@ -1,13 +1,13 @@
 #pragma once
 
 #include "file_descriptor.h"
-#include "epoll.h"
+#include "event_base.h"
 
 namespace flyzero
 {
 
     class tcp_connection
-        : public epoll_listener
+        : public event_listener
     {
     public:
         constexpr tcp_connection() = default;
@@ -15,13 +15,11 @@ namespace flyzero
         explicit tcp_connection(const file_descriptor & sock) noexcept
             : sock_(sock)
         {
-            sock_.set_nonblocking();
         }
 
         explicit tcp_connection(file_descriptor && sock) noexcept
             : sock_(std::move(sock))
         {
-            sock_.set_nonblocking();
         }
 
         tcp_connection(const tcp_connection &) = default;
