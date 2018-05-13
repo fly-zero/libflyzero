@@ -3,12 +3,12 @@
 #include <memory>
 #include <cassert>
 
-#include "allocator.h"
+#include "Allocator.h"
 
 namespace flyzero
 {
     
-    template <typename Type, typename Alloc = flyzero::allocator<Type> >
+    template <typename Type, typename Alloc = flyzero::Allocator<Type> >
     class circular_queue
     {
         using allocator_type = Alloc;
