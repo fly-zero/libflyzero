@@ -10,7 +10,7 @@
 
 namespace flyzero
 {
-    
+
     class task_queue_thread
         : public std::thread
     {
@@ -32,8 +32,8 @@ namespace flyzero
         using task_queue = flyzero::circular_queue<task_pointer>;
 
     public:
-        explicit task_queue_thread(std::size_t queue_capacity, const alloc_type & alloc = malloc, const dealloc_type & dealloc = free)
-            : queue_(queue_capacity, flyzero::allocator<task_pointer>(alloc, dealloc))
+        explicit task_queue_thread(std::size_t const queue_capacity, const alloc_type & alloc = malloc, const dealloc_type & dealloc = free)
+            : queue_(queue_capacity, alloc, dealloc)
             , processed_task_num_(0)
             , sema_(0)
         {
