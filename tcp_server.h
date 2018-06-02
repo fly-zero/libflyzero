@@ -7,13 +7,13 @@
 #include <functional>
 
 #include "file_descriptor.h"
-#include "EventBase.h"
+#include "event_base.h"
 
 namespace flyzero
 {
 
     class tcp_server
-        : public EventListener
+        : public event_listener
     {
     public:
         tcp_server(void) = default;
@@ -42,13 +42,13 @@ namespace flyzero
 
         virtual void on_accept(file_descriptor && sock, const sockaddr_storage & addr, socklen_t addrlen) = 0;
 
-        bool OnRead(void) override final;
+        bool on_read(void) override final;
 
-        bool OnWrite(void) override final { return true; }
+        bool on_write(void) override final { return true; }
 
-        void OnClose(void) override final { }
+        void on_close(void) override final { }
 
-        int GetFd(void) const override final { return sock_.Get(); }
+        int get_fd(void) const override final { return sock_.Get(); }
 
     private:
         file_descriptor sock_;

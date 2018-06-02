@@ -32,7 +32,7 @@ namespace flyzero
         return true;
     }
 
-    bool tcp_server::OnRead(void)
+    bool tcp_server::on_read(void)
     {
         sockaddr_storage addr;  // NOLINT
         socklen_t addrlen = sizeof addr;

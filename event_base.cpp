@@ -1,12 +1,12 @@
 #include <cassert>
 #include <cerrno>
 
-#include "EventBase.h"
+#include "event_base.h"
 
 namespace flyzero
 {
 
-    void EventBase::Run(size_t const max_events, int const timeout)
+    void event_base::run(size_t const max_events, int const timeout)
     {
         auto events = new epoll_event[max_events];
 
@@ -23,14 +23,14 @@ namespace flyzero
 
             if (0 == nev)
             {
-                OnTimeout();
+                on_timeout();
                 continue;
             }
 
             for (auto i = 0; i < nev; ++i)
-                OnDispacth(*static_cast<EventListener *>(events[i].data.ptr), events[i].events);
+                on_dispacth(*static_cast<event_listener *>(events[i].data.ptr), events[i].events);
 
-            OnLoop();
+            on_oop();
         }
 
         delete[] events;
