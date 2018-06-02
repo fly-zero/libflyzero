@@ -49,15 +49,27 @@ namespace flyzero
         /**
          * @brief Get the file descriptor number
          */
-        int Get(void) const noexcept { return fd_; }
+        int get(void) const noexcept { return fd_; }
 
         /**
          * @brief Close file descriptor
          */
-        void Close(void) noexcept
+        void close(void) noexcept
         {
             ::close(fd_);
             fd_ = -1;
+        }
+
+        /**
+         * @brief Release the ownership of file descriptor
+         * 
+         * @return int Return the file descriptor number
+         */
+        int release(void)
+        {
+            auto ret = fd_;
+            fd_ = -1;
+            return ret;
         }
 
         /**
@@ -66,7 +78,7 @@ namespace flyzero
          * @return FileDescriptor On success, return a new file descriptor
          *                        On error, return a empty file descriptor 
          */
-        file_descriptor Clone(void) const noexcept { return file_descriptor(::fcntl(fd_, F_DUPFD, 0)); }
+        file_descriptor clone(void) const noexcept { return file_descriptor(::fcntl(fd_, F_DUPFD, 0)); }
 
         /**
          * @brief Set the file descriptor nonblocking
@@ -74,7 +86,7 @@ namespace flyzero
          * @return true Success
          * @return false Failed
          */
-        bool SetNonblocking(void) const noexcept
+        bool set_nonblocking(void) const noexcept
         {
             auto const ret = ::fcntl(fd_, F_GETFL);
             if (ret == -1)

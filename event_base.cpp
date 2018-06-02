@@ -12,7 +12,7 @@ namespace flyzero
 
         while (true)
         {
-            auto const nev = epoll_wait(epfd_.Get(), events, max_events, timeout);
+            auto const nev = epoll_wait(epfd_.get(), events, max_events, timeout);
 
             if (nev == -1)
             {

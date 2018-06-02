@@ -35,20 +35,20 @@ namespace flyzero
         {
             assert(sizeof addr == addrlen);
 
-            return file_descriptor(::accept4(sock_.Get(), reinterpret_cast<sockaddr *>(&addr), &addrlen, SOCK_NONBLOCK));
+            return file_descriptor(::accept4(sock_.get(), reinterpret_cast<sockaddr *>(&addr), &addrlen, SOCK_NONBLOCK));
         }
 
-        void close(void) { sock_.Close(); }
+        void close(void) { sock_.close(); }
 
         virtual void on_accept(file_descriptor && sock, const sockaddr_storage & addr, socklen_t addrlen) = 0;
 
-        bool on_read(void) override final;
+        void on_read(void) override final;
 
-        bool on_write(void) override final { }
+        void on_write(void) override final { }
 
         void on_close(void) override final { }
 
-        int get_fd(void) const override final { return sock_.Get(); }
+        int get_fd(void) const override final { return sock_.get(); }
 
     private:
         file_descriptor sock_;

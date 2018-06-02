@@ -6,14 +6,14 @@
 namespace flyzero
 {
 
-    void tcp_server::listen(const unsigned short port)
+    bool tcp_server::listen(const unsigned short port)
     {
         file_descriptor sock(::socket(AF_INET, SOCK_STREAM, 0));
 
         if (!sock)
             return false;
 
-        if (!sock.SetNonblocking())
+        if (!sock.set_nonblocking())
             return false;
 
         sockaddr_in addr{ };
@@ -21,10 +21,10 @@ namespace flyzero
         addr.sin_addr.s_addr = INADDR_ANY;
         addr.sin_port = htons(port);
 
-        if (::bind(sock.Get(), reinterpret_cast<sockaddr *>(&addr), sizeof addr) == -1)
+        if (::bind(sock.get(), reinterpret_cast<sockaddr *>(&addr), sizeof addr) == -1)
             return false;
 
-        if (::listen(sock.Get(), 1024) == -1)
+        if (::listen(sock.get(), 1024) == -1)
             return false;
 
         sock_ = std::move(sock);
