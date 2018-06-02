@@ -44,7 +44,7 @@ namespace flyzero
 
         bool on_read(void) override final;
 
-        bool on_write(void) override final { return true; }
+        bool on_write(void) override final { }
 
         void on_close(void) override final { }
 

@@ -22,9 +22,9 @@ namespace flyzero
 
         event_listener & operator=(event_listener &&) = default;
 
-        virtual bool on_read(void) = 0;
+        virtual void on_read(void) = 0;
 
-        virtual bool on_write(void) = 0;
+        virtual void on_write(void) = 0;
 
         virtual void on_close(void) = 0;
 

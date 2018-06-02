@@ -6,7 +6,7 @@
 namespace flyzero
 {
 
-    bool tcp_server::listen(const unsigned short port)
+    void tcp_server::listen(const unsigned short port)
     {
         file_descriptor sock(::socket(AF_INET, SOCK_STREAM, 0));
 
@@ -32,7 +32,7 @@ namespace flyzero
         return true;
     }
 
-    bool tcp_server::on_read(void)
+    void tcp_server::on_read(void)
     {
         sockaddr_storage addr;  // NOLINT
         socklen_t addrlen = sizeof addr;
@@ -41,7 +41,5 @@ namespace flyzero
         
         if (sock)
             on_accept(std::move(sock), addr, addrlen);
-        
-        return true;
     }
 }
