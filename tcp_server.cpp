@@ -8,7 +8,7 @@ namespace flyzero
 
     bool tcp_server::listen(const unsigned short port)
     {
-        FileDescriptor sock(::socket(AF_INET, SOCK_STREAM, 0));
+        file_descriptor sock(::socket(AF_INET, SOCK_STREAM, 0));
 
         if (!sock)
             return false;

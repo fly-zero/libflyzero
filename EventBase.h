@@ -2,7 +2,7 @@
 
 #include <sys/epoll.h>
 
-#include <FileDescriptor.h>
+#include "file_descriptor.h"
 
 namespace flyzero
 {
@@ -72,7 +72,7 @@ namespace flyzero
         virtual void OnTimeout(void) = 0;
 
    private:
-        FileDescriptor epfd_ { ::epoll_create1(0) };
+        file_descriptor epfd_ { ::epoll_create1(0) };
         size_t size_{ 0 };
     };
 

@@ -6,20 +6,20 @@
 namespace flyzero
 {
 
-    class FileDescriptor
+    class file_descriptor
     {
     public:
         /**
          * @brief Default constructor
          */ 
-        constexpr FileDescriptor(void) = default;
+        constexpr file_descriptor(void) = default;
 
         /**
          * @brief Construct from fd number
          * 
          * @param fd File decriptor number
          */
-        explicit FileDescriptor(int const fd) noexcept
+        explicit file_descriptor(int const fd) noexcept
             : fd_(fd)
         {
         }
@@ -27,7 +27,7 @@ namespace flyzero
         /**
          * @brief Copy constructor
          */
-        FileDescriptor(const FileDescriptor & other) noexcept
+        file_descriptor(const file_descriptor & other) noexcept
             : fd_(other.fd_ == -1 ? -1 : ::fcntl(other.fd_, F_DUPFD, 0))
         {
         }
@@ -35,7 +35,7 @@ namespace flyzero
         /**
          * @brief Move constructor
          */
-        FileDescriptor(FileDescriptor && other) noexcept
+        file_descriptor(file_descriptor && other) noexcept
             : fd_(other.fd_)
         {
             other.fd_ = -1;
@@ -44,7 +44,7 @@ namespace flyzero
         /**
          * @brief Destructor
          */
-        ~FileDescriptor(void) noexcept { if (fd_ >= 0) ::close(fd_); }
+        ~file_descriptor(void) noexcept { if (fd_ >= 0) ::close(fd_); }
 
         /**
          * @brief Get the file descriptor number
@@ -66,7 +66,7 @@ namespace flyzero
          * @return FileDescriptor On success, return a new file descriptor
          *                        On error, return a empty file descriptor 
          */
-        FileDescriptor Clone(void) const noexcept { return FileDescriptor(::fcntl(fd_, F_DUPFD, 0)); }
+        file_descriptor Clone(void) const noexcept { return file_descriptor(::fcntl(fd_, F_DUPFD, 0)); }
 
         /**
          * @brief Set the file descriptor nonblocking
@@ -90,7 +90,7 @@ namespace flyzero
         /**
          * @brief Copy assignment
          */
-        FileDescriptor & operator=(const FileDescriptor & other) noexcept
+        file_descriptor & operator=(const file_descriptor & other) noexcept
         {
             if (this != &other)
                 fd_ = other.fd_ == -1 ? -1 : ::fcntl(other.fd_, F_DUPFD, 0);
@@ -100,7 +100,7 @@ namespace flyzero
         /**
          * @brief Move assignment
          */
-        FileDescriptor & operator=(FileDescriptor && other) noexcept
+        file_descriptor & operator=(file_descriptor && other) noexcept
         {
             if (this != &other)
             {
@@ -113,7 +113,7 @@ namespace flyzero
         /**
          * @brief Operator < overload
          */
-        bool operator<(const FileDescriptor & other) const noexcept { return fd_ < other.fd_; }
+        bool operator<(const file_descriptor & other) const noexcept { return fd_ < other.fd_; }
 
     private:
         int fd_{ -1 };
