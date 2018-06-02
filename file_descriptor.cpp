@@ -7,7 +7,7 @@ namespace flyzero
     {
         for (size_t pos = 0; pos < size; )
         {
-            auto nwrite = ::write(fd_, buff + pos, size - pos);
+            auto const nwrite = ::write(fd_, buff + pos, size - pos);
             if (nwrite == -1)
                 return size_t(-1);
             pos += nwrite;

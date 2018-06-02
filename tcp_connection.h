@@ -12,11 +12,6 @@ namespace flyzero
     public:
         constexpr tcp_connection() = default;
 
-        explicit tcp_connection(const file_descriptor & sock) noexcept
-            : sock_(sock)
-        {
-        }
-
         explicit tcp_connection(file_descriptor && sock) noexcept
             : sock_(std::move(sock))
         {
@@ -27,6 +22,10 @@ namespace flyzero
         tcp_connection(tcp_connection &&) = default;
 
         virtual ~tcp_connection() = default;
+
+        tcp_connection & operator=(const tcp_connection &) = default;
+
+        tcp_connection & operator=(tcp_connection &&) = default;
 
         int get_fd() const noexcept override
         {
