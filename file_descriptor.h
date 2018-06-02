@@ -65,7 +65,7 @@ namespace flyzero
          * 
          * @return int Return the file descriptor number
          */
-        int release(void)
+        int release(void) noexcept
         {
             auto ret = fd_;
             fd_ = -1;

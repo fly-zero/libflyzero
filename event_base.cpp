@@ -30,7 +30,7 @@ namespace flyzero
             for (auto i = 0; i < nev; ++i)
                 on_dispacth(*static_cast<event_listener *>(events[i].data.ptr), events[i].events);
 
-            on_oop();
+            on_loop();
         }
 
         delete[] events;
