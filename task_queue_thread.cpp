@@ -3,7 +3,7 @@
 namespace flyzero
 {
 
-    bool task_queue_thread::push(task* th, void (* deleter)(task*))
+    bool task_queue_thread::push(task * th, void (* deleter)(task*))
     {
         if (queue_.full())
             return false;
