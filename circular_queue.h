@@ -21,7 +21,7 @@ namespace flyzero
         explicit circular_queue(std::size_t const capacity, const allocator_type & allocator = malloc, const deallocator_type & deallocator = free)
             : capacity_(round_power2(capacity))
             , mask_(capacity_ - 1)
-            , buffer_(malloc(capacity_ * sizeof (Type)))
+            , buffer_(allocator(capacity_ * sizeof (Type)))
             , ridx_(0)
             , widx_(0)
             , allocator_(allocator)
