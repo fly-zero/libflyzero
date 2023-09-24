@@ -25,14 +25,7 @@ public:
 
     TcpServer &operator=(TcpServer &&) = default;
 
-    file_descriptor accept(sockaddr_storage &addr, socklen_t &addrlen) const {
-        assert(sizeof addr == addrlen);
-
-        return file_descriptor(::accept4(fd(),
-                                         reinterpret_cast<sockaddr *>(&addr),
-                                         &addrlen, SOCK_NONBLOCK));
-    }
-
+protected:
     virtual void on_accept(file_descriptor &&sock, const sockaddr_storage &addr,
                            socklen_t addrlen) = 0;
 
@@ -42,6 +35,8 @@ protected:
     void on_write(void) override final {}
 
     static int listen(unsigned short port);
+
+    static int listen(const char *unix_path);
 };
 
 inline TcpServer::TcpServer(int sock) : IoListener(sock) {}
