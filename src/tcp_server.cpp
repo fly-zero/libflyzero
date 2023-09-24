@@ -5,7 +5,7 @@
 
 namespace flyzero {
 
-int tcp_server::listen(const unsigned short port) {
+int TcpServer::listen(const unsigned short port) {
     file_descriptor sock(::socket(AF_INET, SOCK_STREAM, 0));
 
     if (!sock) return false;
@@ -27,7 +27,7 @@ int tcp_server::listen(const unsigned short port) {
     return sock.release();
 }
 
-void tcp_server::on_read(void) {
+void TcpServer::on_read(void) {
     sockaddr_storage addr;  // NOLINT
     socklen_t addrlen = sizeof addr;
 

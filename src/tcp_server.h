@@ -11,19 +11,19 @@
 
 namespace flyzero {
 
-class tcp_server : public EventDispatch::IoListener {
+class TcpServer : public EventDispatch::IoListener {
 public:
-    tcp_server(int sock);
+    TcpServer(int sock);
 
-    tcp_server(const tcp_server &) = default;
+    TcpServer(const TcpServer &) = default;
 
-    tcp_server(tcp_server &&) = default;
+    TcpServer(TcpServer &&) = default;
 
-    virtual ~tcp_server(void) = default;
+    virtual ~TcpServer(void) = default;
 
-    tcp_server &operator=(const tcp_server &) = default;
+    TcpServer &operator=(const TcpServer &) = default;
 
-    tcp_server &operator=(tcp_server &&) = default;
+    TcpServer &operator=(TcpServer &&) = default;
 
     file_descriptor accept(sockaddr_storage &addr, socklen_t &addrlen) const {
         assert(sizeof addr == addrlen);
@@ -44,6 +44,6 @@ protected:
     static int listen(unsigned short port);
 };
 
-inline tcp_server::tcp_server(int sock) : IoListener(sock) {}
+inline TcpServer::TcpServer(int sock) : IoListener(sock) {}
 
 }  // namespace flyzero
