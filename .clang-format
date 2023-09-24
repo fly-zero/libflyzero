@@ -1,0 +1,5 @@
+# Base on Google C++ Style Guide
+BasedOnStyle: Google
+
+# Indentation
+IndentWidth: 4
