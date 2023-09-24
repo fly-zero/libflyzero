@@ -1,45 +1,40 @@
-#include <sys/socket.h>
-#include <netinet/in.h>
-
 #include "tcp_server.h"
 
-namespace flyzero
-{
+#include <netinet/in.h>
+#include <sys/socket.h>
 
-    bool tcp_server::listen(const unsigned short port)
-    {
-        file_descriptor sock(::socket(AF_INET, SOCK_STREAM, 0));
+namespace flyzero {
 
-        if (!sock)
-            return false;
+int tcp_server::listen(const unsigned short port) {
+    file_descriptor sock(::socket(AF_INET, SOCK_STREAM, 0));
 
-        if (!sock.set_nonblocking())
-            return false;
+    if (!sock) return false;
 
-        sockaddr_in addr{ };
-        addr.sin_family = AF_INET;
-        addr.sin_addr.s_addr = INADDR_ANY;
-        addr.sin_port = htons(port);
+    if (!sock.set_nonblocking()) return false;
 
-        if (::bind(sock.get(), reinterpret_cast<sockaddr *>(&addr), sizeof addr) == -1)
-            return false;
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(port);
 
-        if (::listen(sock.get(), 1024) == -1)
-            return false;
+    auto err =
+        ::bind(sock.get(), reinterpret_cast<sockaddr *>(&addr), sizeof addr);
+    if (err != 0) return -1;
 
-        sock_ = std::move(sock);
+    err = ::listen(sock.get(), 1024);
+    if (err != 0) return -1;
 
-        return true;
-    }
+    return sock.release();
+}
 
-    void tcp_server::on_read(void)
-    {
-        sockaddr_storage addr;  // NOLINT
-        socklen_t addrlen = sizeof addr;
+void tcp_server::on_read(void) {
+    sockaddr_storage addr;  // NOLINT
+    socklen_t addrlen = sizeof addr;
 
-        auto sock = accept(addr, addrlen);
-        
-        if (sock)
-            on_accept(std::move(sock), addr, addrlen);
+    auto sock = accept(addr, addrlen);
+
+    if (sock) {
+        on_accept(std::move(sock), addr, addrlen);
     }
 }
+}  // namespace flyzero

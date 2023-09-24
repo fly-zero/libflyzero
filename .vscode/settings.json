@@ -10,5 +10,6 @@
         "--header-insertion=iwyu",
         "--pch-storage=disk",
     ],
-    "cmake.generator": "Unix Makfiles"
+    "cmake.generator": "Unix Makfiles",
+    "editor.formatOnType": true
 }

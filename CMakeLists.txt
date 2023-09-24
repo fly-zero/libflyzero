@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_library(flyzero STATIC
-    src/event_base.cpp
+    src/event_dispatch.cpp
     src/hash.cpp
     src/hex.cpp
     src/ipv4_addr.cpp
