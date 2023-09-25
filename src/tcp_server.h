@@ -52,7 +52,7 @@ protected:
      * @param addr 地址
      * @param addrlen 地址长度
      */
-    virtual void on_accept(file_descriptor &&sock, const sockaddr_storage &addr,
+    virtual void on_accept(FileDescriptor &&sock, const sockaddr_storage &addr,
                            socklen_t addrlen) = 0;
 
 protected:

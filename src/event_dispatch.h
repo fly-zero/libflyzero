@@ -136,7 +136,7 @@ protected:
 
 private:
     bool running_{false};                         ///< 是否正在运行
-    file_descriptor epoll_fd_;                    ///< epoll 文件描述符
+    FileDescriptor epoll_fd_;                     ///< epoll 文件描述符
     std::vector<LoopListener *> loop_listeners_;  ///< 循环监听器
     TimeoutListenerQueue timeout_listeners_;      ///< 超时监听器队列
 };
@@ -154,7 +154,7 @@ public:
     virtual void on_write() = 0;
 
 private:
-    file_descriptor fd_;  ///< 监听的文件描述符
+    FileDescriptor fd_;  ///< 监听的文件描述符
 };
 
 struct EventDispatch::LoopListener {

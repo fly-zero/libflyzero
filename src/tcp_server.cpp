@@ -14,9 +14,8 @@ void TcpServer::on_read(void) {
     while (true) {
         sockaddr_storage addr{};
         socklen_t addrlen = sizeof addr;
-        file_descriptor sock{::accept4(fd(),
-                                       reinterpret_cast<sockaddr *>(&addr),
-                                       &addrlen, SOCK_NONBLOCK)};
+        FileDescriptor sock{::accept4(fd(), reinterpret_cast<sockaddr *>(&addr),
+                                      &addrlen, SOCK_NONBLOCK)};
 
         if (sock)
             on_accept(std::move(sock), addr, addrlen);
@@ -32,7 +31,7 @@ void TcpServer::on_read(void) {
 
 int TcpServer::listen(in_addr_t ip, uint16_t port) {
     // 创建套接字
-    file_descriptor sock(::socket(AF_INET, SOCK_STREAM, 0));
+    FileDescriptor sock(::socket(AF_INET, SOCK_STREAM, 0));
     if (!sock) return -1;
 
     // 设置非阻塞
@@ -57,7 +56,7 @@ int TcpServer::listen(in_addr_t ip, uint16_t port) {
 
 int TcpServer::listen(const char *const unix_path) {
     // 创建套接字
-    file_descriptor sock(::socket(AF_UNIX, SOCK_STREAM, 0));
+    FileDescriptor sock(::socket(AF_UNIX, SOCK_STREAM, 0));
     if (!sock) return -1;
 
     // 设置非阻塞

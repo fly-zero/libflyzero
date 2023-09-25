@@ -1,134 +1,150 @@
 #pragma once
 
-#include <unistd.h>
 #include <fcntl.h>
+#include <unistd.h>
 
-namespace flyzero
-{
+#include <utility>
 
-    class file_descriptor
-    {
-    public:
-        /**
-         * @brief Default constructor
-         */ 
-        constexpr file_descriptor(void) = default;
+namespace flyzero {
 
-        /**
-         * @brief Construct from fd number
-         * 
-         * @param fd File decriptor number
-         */
-        explicit file_descriptor(int const fd) noexcept
-            : fd_(fd)
-        {
-        }
+class FileDescriptor {
+public:
+    /**
+     * @brief 默认构造函数
+     */
+    constexpr FileDescriptor(void) = default;
 
-        /**
-         * @brief Copy constructor
-         */
-        file_descriptor(const file_descriptor & other) noexcept
-            : fd_(other.fd_ == -1 ? -1 : ::fcntl(other.fd_, F_DUPFD, 0))
-        {
-        }
+    /**
+     * @brief 构造函数
+     * @param fd 文件描述符
+     */
+    explicit FileDescriptor(int const fd) noexcept : fd_(fd) {}
 
-        /**
-         * @brief Move constructor
-         */
-        file_descriptor(file_descriptor && other) noexcept
-            : fd_(other.fd_)
-        {
-            other.fd_ = -1;
-        }
+    /**
+     * @brief 复制构造函数
+     */
+    FileDescriptor(const FileDescriptor& other) noexcept;
 
-        /**
-         * @brief Destructor
-         */
-        ~file_descriptor(void) noexcept { if (fd_ >= 0) ::close(fd_); }
+    /**
+     * @brief 移动构造函数
+     */
+    FileDescriptor(FileDescriptor&& other) noexcept;
 
-        /**
-         * @brief Get the file descriptor number
-         */
-        int get(void) const noexcept { return fd_; }
+    /**
+     * @brief 析构函数
+     */
+    ~FileDescriptor(void) noexcept;
 
-        /**
-         * @brief Close file descriptor
-         */
-        void close(void) noexcept
-        {
-            ::close(fd_);
-            fd_ = -1;
-        }
+    /**
+     * @brief 获取文件描述符
+     */
+    int get(void) const noexcept;
 
-        /**
-         * @brief Release the ownership of file descriptor
-         * 
-         * @return int Return the file descriptor number
-         */
-        int release(void) noexcept
-        {
-            auto ret = fd_;
-            fd_ = -1;
-            return ret;
-        }
+    /**
+     * @brief 关闭文件描述符
+     */
+    void close(void) noexcept;
 
-        /**
-         * @brief Clone the file descriptor
-         * 
-         * @return FileDescriptor On success, return a new file descriptor
-         *                        On error, return a empty file descriptor 
-         */
-        file_descriptor clone(void) const noexcept { return file_descriptor(::fcntl(fd_, F_DUPFD, 0)); }
+    /**
+     * @brief 释放文件描述符的所有权
+     * @return int 文件描述符
+     */
+    int release(void) noexcept;
 
-        /**
-         * @brief Set the file descriptor nonblocking
-         * 
-         * @return true Success
-         * @return false Failed
-         */
-        bool set_nonblocking(void) const noexcept
-        {
-            auto const ret = ::fcntl(fd_, F_GETFL);
-            if (ret == -1)
-                return false;
-            return ::fcntl(fd_, F_SETFL, ret | O_NONBLOCK) != -1;
-        }
+    /**
+     * @brief 复制文件描述符
+     * @return FileDescriptor
+     * 成功时，返回新的文件描述符；失败时，返回无效的文件描述符
+     */
+    FileDescriptor clone(void) const noexcept;
 
-        /**
-         * @brief Return true, if fd_ is a valid file descriptor value; otherwise return false
-         */
-        explicit operator bool(void) const noexcept { return fd_ != -1; }
+    /**
+     * @brief 设置文件描述符为非阻塞
+     * @return 成功时，返回 true；失败时，返回 false
+     */
+    bool set_nonblocking(void) const noexcept;
 
-        /**
-         * @brief Copy assignment
-         */
-        file_descriptor & operator=(const file_descriptor & other) noexcept
-        {
-            if (this != &other)
-                fd_ = other.fd_ == -1 ? -1 : ::fcntl(other.fd_, F_DUPFD, 0);
-            return *this;
-        }
+    /**
+     * @brief 转换为 bool
+     */
+    explicit operator bool(void) const noexcept;
 
-        /**
-         * @brief Move assignment
-         */
-        file_descriptor & operator=(file_descriptor && other) noexcept
-        {
-            if (this != &other)
-            {
-                fd_ = other.fd_;
-                other.fd_ = -1;
-            }
-            return *this;
-        }
+    /**
+     * @brief 复制赋值
+     */
+    FileDescriptor& operator=(const FileDescriptor& other) noexcept;
 
-        /**
-         * @brief Operator < overload
-         */
-        bool operator<(const file_descriptor & other) const noexcept { return fd_ < other.fd_; }
+    /**
+     * @brief 移动赋值
+     */
+    FileDescriptor& operator=(FileDescriptor&& other) noexcept;
 
-    private:
-        int fd_{ -1 };
-    };
+    /**
+     * @brief 比较运算符
+     */
+    bool operator<(const FileDescriptor& other) const noexcept;
 
+private:
+    int fd_{-1};  ///< 文件描述符
+};
+
+inline FileDescriptor::FileDescriptor(const FileDescriptor& other) noexcept
+    : fd_{other.fd_ == -1 ? -1 : ::fcntl(other.fd_, F_DUPFD, 0)} {}
+
+inline FileDescriptor::FileDescriptor(FileDescriptor&& other) noexcept
+    : fd_{std::exchange(other.fd_, -1)} {}
+
+inline FileDescriptor::~FileDescriptor() noexcept {
+    if (fd_ >= 0) {
+        ::close(fd_);
+    }
 }
+
+inline int FileDescriptor::get() const noexcept { return fd_; }
+
+inline void FileDescriptor::close() noexcept {
+    ::close(fd_);
+    fd_ = -1;
+}
+
+inline int FileDescriptor::release() noexcept { return std::exchange(fd_, -1); }
+
+inline FileDescriptor FileDescriptor::clone() const noexcept {
+    if (fd_ == -1) return FileDescriptor();
+    return FileDescriptor(::fcntl(fd_, F_DUPFD, 0));
+}
+
+inline bool FileDescriptor::set_nonblocking() const noexcept {
+    if (fd_ < 0) return false;
+    auto const ret = ::fcntl(fd_, F_GETFL);
+    if (ret < 0) return false;
+    return ::fcntl(fd_, F_SETFL, ret | O_NONBLOCK) == 0;
+}
+
+inline FileDescriptor::operator bool(void) const noexcept { return fd_ != -1; }
+
+inline FileDescriptor& FileDescriptor::operator=(
+    const FileDescriptor& other) noexcept {
+    if (this != &other) [[likely]] {
+        *this = other.clone();
+    }
+    return *this;
+}
+
+inline FileDescriptor& FileDescriptor::operator=(
+    FileDescriptor&& other) noexcept {
+    if (this != &other) [[likely]] {
+        if (fd_ >= 0) {
+            ::close(fd_);
+        }
+        fd_ = std::exchange(other.fd_, -1);
+    }
+    return *this;
+}
+
+inline bool FileDescriptor::operator<(
+    const FileDescriptor& other) const noexcept {
+    return fd_ < other.fd_;
+}
+
+}  // namespace flyzero
