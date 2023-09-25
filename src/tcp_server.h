@@ -1,6 +1,7 @@
 #pragma once
 
 #include <arpa/inet.h>
+#include <netinet/in.h>
 
 #include <cassert>
 #include <functional>
@@ -68,6 +69,7 @@ protected:
     /**
      * @brief 监听指定地址和端口
      */
+    static int listen(in_addr_t ip, uint16_t port);
 
     /**
      * @brief 监听指定 Unix 域套接字

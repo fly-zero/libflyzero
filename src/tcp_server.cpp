@@ -1,6 +1,5 @@
 #include "tcp_server.h"
 
-#include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 
@@ -31,7 +30,7 @@ void TcpServer::on_read(void) {
     }
 }
 
-int TcpServer::listen(const unsigned short port) {
+int TcpServer::listen(in_addr_t ip, uint16_t port) {
     // 创建套接字
     file_descriptor sock(::socket(AF_INET, SOCK_STREAM, 0));
     if (!sock) return -1;
@@ -42,7 +41,7 @@ int TcpServer::listen(const unsigned short port) {
     // 绑定地址
     sockaddr_in addr{};
     addr.sin_family = AF_INET;
-    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_addr.s_addr = htonl(ip);
     addr.sin_port = htons(port);
 
     auto err =
