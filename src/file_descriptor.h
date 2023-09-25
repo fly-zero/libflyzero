@@ -12,13 +12,13 @@ public:
     /**
      * @brief 默认构造函数
      */
-    constexpr FileDescriptor(void) = default;
+    constexpr FileDescriptor() = default;
 
     /**
      * @brief 构造函数
      * @param fd 文件描述符
      */
-    explicit FileDescriptor(int const fd) noexcept : fd_(fd) {}
+    explicit FileDescriptor(int fd) noexcept;
 
     /**
      * @brief 复制构造函数
@@ -33,41 +33,41 @@ public:
     /**
      * @brief 析构函数
      */
-    ~FileDescriptor(void) noexcept;
+    ~FileDescriptor() noexcept;
 
     /**
      * @brief 获取文件描述符
      */
-    int get(void) const noexcept;
+    int get() const noexcept;
 
     /**
      * @brief 关闭文件描述符
      */
-    void close(void) noexcept;
+    void close() noexcept;
 
     /**
      * @brief 释放文件描述符的所有权
      * @return int 文件描述符
      */
-    int release(void) noexcept;
+    int release() noexcept;
 
     /**
      * @brief 复制文件描述符
      * @return FileDescriptor
      * 成功时，返回新的文件描述符；失败时，返回无效的文件描述符
      */
-    FileDescriptor clone(void) const noexcept;
+    FileDescriptor clone() const noexcept;
 
     /**
      * @brief 设置文件描述符为非阻塞
      * @return 成功时，返回 true；失败时，返回 false
      */
-    bool set_nonblocking(void) const noexcept;
+    bool set_nonblocking() const noexcept;
 
     /**
      * @brief 转换为 bool
      */
-    explicit operator bool(void) const noexcept;
+    explicit operator bool() const noexcept;
 
     /**
      * @brief 复制赋值
@@ -87,6 +87,8 @@ public:
 private:
     int fd_{-1};  ///< 文件描述符
 };
+
+inline FileDescriptor::FileDescriptor(int const fd) noexcept : fd_(fd) {}
 
 inline FileDescriptor::FileDescriptor(const FileDescriptor& other) noexcept
     : fd_{other.fd_ == -1 ? -1 : ::fcntl(other.fd_, F_DUPFD, 0)} {}

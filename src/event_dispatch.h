@@ -145,6 +145,8 @@ class EventDispatch::IoListener {
 public:
     explicit IoListener(int fd);
 
+    explicit IoListener(FileDescriptor &&fd) noexcept;
+
     virtual ~IoListener() = default;
 
     int fd() const noexcept;
@@ -212,5 +214,12 @@ inline void EventDispatch::on_loop() {
         listener->on_loop();
     }
 }
+
+inline EventDispatch::IoListener::IoListener(int fd) : fd_{fd} {}
+
+inline EventDispatch::IoListener::IoListener(FileDescriptor &&fd) noexcept
+    : fd_{std::move(fd)} {}
+
+inline int EventDispatch::IoListener::fd() const noexcept { return fd_.get(); }
 
 }  // namespace flyzero
