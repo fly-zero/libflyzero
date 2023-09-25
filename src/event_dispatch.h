@@ -166,7 +166,7 @@ struct EventDispatch::LoopListener {
 struct EventDispatch::TimeoutListener {
     virtual ~TimeoutListener() = default;
 
-    virtual bool on_timeout() = 0;
+    virtual bool on_timeout(TimePoint now) = 0;
 };
 
 inline EventDispatch::TimeoutListenerWrapper::TimeoutListenerWrapper(

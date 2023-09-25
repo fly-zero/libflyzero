@@ -73,7 +73,7 @@ void EventDispatch::on_timeout(TimePoint now) {
     while (!timeout_listeners_.empty()) {
         auto const &wrapper = timeout_listeners_.top();
         if (wrapper.deadline_ > now) break;
-        auto const result = wrapper.listener_->on_timeout();
+        auto const result = wrapper.listener_->on_timeout(now);
         if (result) {
             timeout_listeners_.emplace(*wrapper.listener_, now,
                                        wrapper.interval_);
