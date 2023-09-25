@@ -47,36 +47,91 @@ private:
                             std::greater<TimeoutListenerWrapper>>;
 
 public:
+    /**
+     * @brief 构造函数
+     */
     EventDispatch();
 
+    /**
+     * @brief 禁止拷贝
+     */
     EventDispatch(const EventDispatch &) = delete;
 
+    /**
+     * @brief 禁止赋值
+     */
     void operator=(const EventDispatch &) = delete;
 
+    /**
+     * @brief 移动构造函数
+     */
     EventDispatch(EventDispatch &&) = default;
 
+    /**
+     * @brief 移动赋值
+     */
     EventDispatch &operator=(EventDispatch &&) = default;
 
+    /**
+     * @brief 析构函数
+     */
     ~EventDispatch() = default;
 
+    /**
+     * @brief 注册 IO 事件监听器
+     * @param listener 监听器
+     * @param event 监听的事件
+     */
     void register_io_listener(IoListener &listener, Event event);
 
+    /**
+     * @brief 注销 IO 事件监听器
+     * @param listener 监听器
+     */
     void unregister_io_listener(IoListener &listener);
 
+    /**
+     * @brief 运行事件循环
+     * @param listener 监听器
+     */
     void register_loop_listener(LoopListener &listener);
 
+    /**
+     * @brief 注销事件循环
+     * @param listener 监听器
+     */
     void unregister_loop_listener(LoopListener &listener);
 
+    /**
+     * @brief 注册超时监听器
+     * @param listener 监听器
+     * @param timeout 超时时间
+     */
     void register_timeout_listener(TimeoutListener &listener,
                                    TimeDuration timeout);
 
+    /**
+     * @brief 运行事件循环
+     * @param timeout 超时时间
+     */
     void run_loop(std::chrono::milliseconds timeout);
 
+    /**
+     * @brief 运行一次事件循环
+     * @param timeout 超时时间
+     */
     void run_once(std::chrono::milliseconds timeout);
 
 protected:
+    /**
+     * @brief 处理循环事件
+     */
     void on_loop();
 
+    /**
+     * @brief 处理超时事件
+     * @param now 当前时间
+     */
     void on_timeout(TimePoint now);
 
 private:
