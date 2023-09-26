@@ -13,16 +13,24 @@
 #include <time.h>
 #include <unistd.h>
 
+#define CACHE_LINE_SIZE 64
+
+#define __cache_aligned __attribute__((aligned(CACHE_LINE_SIZE)))
+
+struct circular_buffer_index {
+    size_t value;  ///< 索引
+} __cache_aligned;
+
 struct circular_buffer_header {
-    size_t capacity;       ///< 缓冲区容量
-    volatile size_t widx;  ///< 写索引
-    volatile size_t ridx;  ///< 读索引
-    char name[256];        ///< 共享内存对象名称
-    int flag;              ///< 标志
+    struct circular_buffer_index r;  ///< 写缓冲区上下文
+    struct circular_buffer_index w;  ///< 读缓冲区上下文
+    size_t capacity;                 ///< 缓冲区容量
+    int flag;                        ///< 标志
+    char name[256];                  ///< 共享内存对象名称
 };
 
 static inline size_t readable_size(struct circular_buffer_header *cb) {
-    return cb->widx - cb->ridx;
+    return cb->w.value - cb->r.value;
 }
 
 static inline size_t writable_size(struct circular_buffer_header *cb) {
@@ -117,8 +125,8 @@ circular_buffer *circular_buffer_fcreate(int const shmfd, size_t capacity,
 
     // 初始共享内存队列头
     header->capacity = capacity;
-    header->ridx = 0;
-    header->widx = 0;
+    header->r.value = 0;
+    header->w.value = 0;
     header->name[0] = 0;
     header->flag = flag;
     return header;
@@ -160,7 +168,7 @@ struct buffer_piece circular_buffer_get_writable(circular_buffer *cb) {
     size_t const aligned_head_size =
         (sizeof(struct circular_buffer_header) + 4095) & (~4095);
     ret.data = (char *)header + aligned_head_size +
-               (header->widx & (header->capacity - 1));
+               (header->w.value & (header->capacity - 1));
     return ret;
 }
 
@@ -172,7 +180,7 @@ struct buffer_piece circular_buffer_get_readable(circular_buffer *cb) {
     size_t const aligned_head_size =
         (sizeof(struct circular_buffer_header) + 4095) & (~4095);
     ret.data = (char *)header + aligned_head_size +
-               (header->ridx & (header->capacity - 1));
+               (header->r.value & (header->capacity - 1));
     return ret;
 }
 
@@ -181,7 +189,7 @@ size_t circular_buffer_pop_data(circular_buffer *cb, size_t size) {
     struct circular_buffer_header *header = (struct circular_buffer_header *)cb;
     size_t const tmp = readable_size(header);
     if (size > tmp) size = tmp;
-    header->ridx += size;
+    header->r.value += size;
     return size;
 }
 
@@ -190,7 +198,7 @@ size_t circular_buffer_push_data(circular_buffer *cb, size_t size) {
     struct circular_buffer_header *header = (struct circular_buffer_header *)cb;
     size_t const tmp = writable_size(header);
     if (size > tmp) size = tmp;
-    header->widx += size;
+    header->w.value += size;
     return size;
 }
 
