@@ -25,6 +25,7 @@ struct circular_buffer_header {
     struct circular_buffer_index r;  ///< 写缓冲区上下文
     struct circular_buffer_index w;  ///< 读缓冲区上下文
     size_t capacity;                 ///< 缓冲区容量
+    long page_mask;                  ///< 页掩码
     int flag;                        ///< 标志
     char name[256];                  ///< 共享内存对象名称
 };
@@ -41,7 +42,7 @@ void *map_shared_memory(int const shmfd, size_t const capacity) {
     assert(capacity > 0);
 
     // 对齐到系统页大小
-    int const page_mask = sysconf(_SC_PAGESIZE) - 1;
+    long const page_mask = sysconf(_SC_PAGESIZE) - 1;
     size_t const aligned_head_size =
         ((sizeof(struct circular_buffer_header)) + page_mask) & (~page_mask);
 
@@ -110,10 +111,11 @@ circular_buffer *circular_buffer_create(const char *name, size_t capacity,
 
 circular_buffer *circular_buffer_fcreate(int const shmfd, size_t capacity,
                                          int const flag) {
-    // align to 4K
-    capacity = (capacity + 4095) & (~4095);
+    // 对齐到系统页大小
+    long const page_mask = sysconf(_SC_PAGESIZE) - 1;
+    capacity = (capacity + page_mask) & (~page_mask);
     size_t const aligned_head_size =
-        (sizeof(struct circular_buffer_header) + 4095) & (~4095);
+        (sizeof(struct circular_buffer_header) + page_mask) & (~page_mask);
 
     // 设置共享内存大小
     if (shmfd >= 0 && ftruncate(shmfd, capacity + aligned_head_size) < 0) {
@@ -125,10 +127,11 @@ circular_buffer *circular_buffer_fcreate(int const shmfd, size_t capacity,
     if (!header) return NULL;
 
     // 初始共享内存队列头
-    header->capacity = capacity;
     header->r.value = 0;
     header->w.value = 0;
     header->name[0] = 0;
+    header->capacity = capacity;
+    header->page_mask = page_mask;
     header->flag = flag;
     return header;
 }
@@ -166,8 +169,9 @@ struct buffer_piece circular_buffer_get_writable(circular_buffer *cb) {
     struct buffer_piece ret = {};
     struct circular_buffer_header *header = (struct circular_buffer_header *)cb;
     ret.size = writable_size(header);
+    long const page_mask = header->page_mask;
     size_t const aligned_head_size =
-        (sizeof(struct circular_buffer_header) + 4095) & (~4095);
+        (sizeof(struct circular_buffer_header) + page_mask) & (~page_mask);
     ret.data = (char *)header + aligned_head_size +
                (header->w.value & (header->capacity - 1));
     return ret;
@@ -178,8 +182,9 @@ struct buffer_piece circular_buffer_get_readable(circular_buffer *cb) {
     struct buffer_piece ret = {};
     struct circular_buffer_header *header = (struct circular_buffer_header *)cb;
     ret.size = readable_size(header);
+    long const page_mask = header->page_mask;
     size_t const aligned_head_size =
-        (sizeof(struct circular_buffer_header) + 4095) & (~4095);
+        (sizeof(struct circular_buffer_header) + page_mask) & (~page_mask);
     ret.data = (char *)header + aligned_head_size +
                (header->r.value & (header->capacity - 1));
     return ret;
@@ -205,17 +210,29 @@ size_t circular_buffer_push_data(circular_buffer *cb, size_t size) {
 
 void circular_buffer_detach(circular_buffer *cb) {
     assert(cb);
-    size_t const aligned_head_size =
-        (sizeof(struct circular_buffer_header) + 4095) & (~4095);
+    // 计算共享内存大小
     struct circular_buffer_header *header = (struct circular_buffer_header *)cb;
+    long const page_mask = header->page_mask;
+    size_t const aligned_head_size =
+        (sizeof(struct circular_buffer_header) + page_mask) & (~page_mask);
+
+    // 解除映射
     munmap(header, aligned_head_size + header->capacity + header->capacity);
 }
 
 void circular_buffer_destroy(circular_buffer *cb) {
     assert(cb);
+    // 删除共享内存对象
     struct circular_buffer_header *header = (struct circular_buffer_header *)cb;
-    if (header->name[0]) shm_unlink(header->name);
+    if (header->name[0]) {
+        shm_unlink(header->name);
+    }
+
+    // 计算共享内存大小
+    long const page_mask = header->page_mask;
     size_t const aligned_head_size =
-        (sizeof(struct circular_buffer_header) + 4095) & (~4095);
+        (sizeof(struct circular_buffer_header) + page_mask) & (~page_mask);
+
+    // 解除映射
     munmap(header, aligned_head_size + header->capacity + header->capacity);
 }
