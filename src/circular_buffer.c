@@ -40,9 +40,10 @@ static inline size_t writable_size(struct circular_buffer_header *cb) {
 void *map_shared_memory(int const shmfd, size_t const capacity) {
     assert(capacity > 0);
 
-    // 对齐到4KB
+    // 对齐到系统页大小
+    int const page_mask = sysconf(_SC_PAGESIZE) - 1;
     size_t const aligned_head_size =
-        ((sizeof(struct circular_buffer_header)) + 4095) & (~4095);
+        ((sizeof(struct circular_buffer_header)) + page_mask) & (~page_mask);
 
     // 先预订 total + capacity 长度的地址空间
     size_t const total = capacity + aligned_head_size;
