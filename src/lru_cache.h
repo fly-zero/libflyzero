@@ -271,14 +271,24 @@ auto LruCache<K, V, H, E>::insert(TimePoint now, K key, V value)
     auto const [it, inserted] =
         hash_.insert_check(key, Hash{}, Equal{}, commit_data);
     if (!inserted) {
+        // 结点已存在，返回已存在的结点
         auto const list_it = list_.iterator_to(*it);
         ret = {list_it, false};
     } else {
+        // 结点不存在，创建新结点
         auto const node =
             new Node(now + timeout_, std::move(key), std::move(value));
         list_.push_back(*node);
         hash_.insert_commit(*node, commit_data);
         ret = {list_.iterator_to(*node), true};
+
+        // 扩容
+        if (size() >= hash_.bucket_count()) [[unlikely]] {
+            auto const buckets = hash_.bucket_pointer();
+            auto const count = hash_.bucket_count();
+            hash_.rehash(alloc_buckets(count * 2));
+            delete[] buckets;
+        }
     }
     return ret;
 }
