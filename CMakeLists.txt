@@ -19,3 +19,8 @@ add_library(flyzero STATIC
     src/tcp_server.cpp
     src/utility.cpp
     src/circular_buffer.c)
+
+add_subdirectory(test)
+
+target_include_directories(flyzero INTERFACE
+    ${PROJECT_SOURCE_DIR}/src)
