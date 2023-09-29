@@ -12,7 +12,8 @@
 namespace flyzero {
 
 template <typename K, typename V, typename H = std::hash<K>,
-          typename E = std::equal_to<K>>
+          typename E = std::equal_to<K>,
+          typename A = std::allocator<std::pair<K, V>>>
 class LruCache {
     using ListHook = boost::intrusive::list_member_hook<>;
     using HashHook = boost::intrusive::unordered_set_member_hook<>;
@@ -37,6 +38,9 @@ class LruCache {
         K key_;               ///< 键
         V value_;             ///< 值
     };
+
+    using Allocator =
+        typename std::allocator_traits<A>::template rebind_alloc<Node>;
 
     struct Hash : public H {
         using H::operator();
@@ -193,40 +197,40 @@ private:
     UnorderedSet hash_{alloc_buckets(16)};  ///< 哈希表
 };
 
-template <typename K, typename V, typename H, typename E>
-LruCache<K, V, H, E>::Node::Node(TimePoint deadline, K key, V value)
+template <typename K, typename V, typename H, typename E, typename A>
+LruCache<K, V, H, E, A>::Node::Node(TimePoint deadline, K key, V value)
     : deadline_(deadline), key_(std::move(key)), value_(std::move(value)) {}
 
-template <typename K, typename V, typename H, typename E>
-std::size_t LruCache<K, V, H, E>::Hash::operator()(const Node &node) const {
+template <typename K, typename V, typename H, typename E, typename A>
+std::size_t LruCache<K, V, H, E, A>::Hash::operator()(const Node &node) const {
     return this->operator()(node.key_);
 }
 
-template <typename K, typename V, typename H, typename E>
+template <typename K, typename V, typename H, typename E, typename A>
 template <typename U>
-bool LruCache<K, V, H, E>::Equal::operator()(const U &lhs,
-                                             const Node &rhs) const {
+bool LruCache<K, V, H, E, A>::Equal::operator()(const U &lhs,
+                                                const Node &rhs) const {
     return this->operator()(lhs, rhs.key_);
 }
 
-template <typename K, typename V, typename H, typename E>
+template <typename K, typename V, typename H, typename E, typename A>
 template <typename U>
-bool LruCache<K, V, H, E>::Equal::operator()(const Node &lhs,
-                                             const U &rhs) const {
+bool LruCache<K, V, H, E, A>::Equal::operator()(const Node &lhs,
+                                                const U &rhs) const {
     return this->operator()(lhs.key_, rhs);
 }
 
-template <typename K, typename V, typename H, typename E>
-LruCache<K, V, H, E>::LruCache(Duration timeout) : timeout_(timeout) {}
+template <typename K, typename V, typename H, typename E, typename A>
+LruCache<K, V, H, E, A>::LruCache(Duration timeout) : timeout_(timeout) {}
 
-template <typename K, typename V, typename H, typename E>
-LruCache<K, V, H, E>::~LruCache() {
+template <typename K, typename V, typename H, typename E, typename A>
+LruCache<K, V, H, E, A>::~LruCache() {
     list_.clear();
     hash_.clear_and_dispose([](Node *node) { delete node; });
 }
 
-template <typename K, typename V, typename H, typename E>
-auto LruCache<K, V, H, E>::find(const K &key) -> Iterator {
+template <typename K, typename V, typename H, typename E, typename A>
+auto LruCache<K, V, H, E, A>::find(const K &key) -> Iterator {
     auto const it = hash_.find(key);
     if (it == hash_.end()) return list_.end();
     auto &node = *it;
@@ -234,9 +238,9 @@ auto LruCache<K, V, H, E>::find(const K &key) -> Iterator {
     return list_it;
 }
 
-template <typename K, typename V, typename H, typename E>
+template <typename K, typename V, typename H, typename E, typename A>
 template <typename U>
-auto LruCache<K, V, H, E>::find(const U &key) -> Iterator {
+auto LruCache<K, V, H, E, A>::find(const U &key) -> Iterator {
     auto const it = hash_.find(key, Hash{}, Equal{});
     if (it == hash_.end()) return list_.end();
     auto &node = *it;
@@ -244,8 +248,8 @@ auto LruCache<K, V, H, E>::find(const U &key) -> Iterator {
     return list_it;
 }
 
-template <typename K, typename V, typename H, typename E>
-auto LruCache<K, V, H, E>::find(const K &key) const -> ConstIterator {
+template <typename K, typename V, typename H, typename E, typename A>
+auto LruCache<K, V, H, E, A>::find(const K &key) const -> ConstIterator {
     auto const it = hash_.find(key);
     if (it == hash_.end()) return list_.cend();
     auto &node = *it;
@@ -253,9 +257,9 @@ auto LruCache<K, V, H, E>::find(const K &key) const -> ConstIterator {
     return list_it;
 }
 
-template <typename K, typename V, typename H, typename E>
+template <typename K, typename V, typename H, typename E, typename A>
 template <typename U>
-auto LruCache<K, V, H, E>::find(const U &key) const -> ConstIterator {
+auto LruCache<K, V, H, E, A>::find(const U &key) const -> ConstIterator {
     auto const it = hash_.find(key, Hash{}, Equal{});
     if (it == hash_.end()) return list_.end();
     auto &node = *it;
@@ -263,8 +267,8 @@ auto LruCache<K, V, H, E>::find(const U &key) const -> ConstIterator {
     return list_it;
 }
 
-template <typename K, typename V, typename H, typename E>
-auto LruCache<K, V, H, E>::insert(TimePoint now, K key, V value)
+template <typename K, typename V, typename H, typename E, typename A>
+auto LruCache<K, V, H, E, A>::insert(TimePoint now, K key, V value)
     -> std::pair<Iterator, bool> {
     std::pair<Iterator, bool> ret;
     typename UnorderedSet::insert_commit_data commit_data;
@@ -276,8 +280,9 @@ auto LruCache<K, V, H, E>::insert(TimePoint now, K key, V value)
         ret = {list_it, false};
     } else {
         // 结点不存在，创建新结点
+        auto const ptr = Allocator{}.allocate(1);
         auto const node =
-            new Node(now + timeout_, std::move(key), std::move(value));
+            new (ptr) Node(now + timeout_, std::move(key), std::move(value));
         list_.push_back(*node);
         hash_.insert_commit(*node, commit_data);
         ret = {list_.iterator_to(*node), true};
@@ -293,23 +298,24 @@ auto LruCache<K, V, H, E>::insert(TimePoint now, K key, V value)
     return ret;
 }
 
-template <typename K, typename V, typename H, typename E>
-void LruCache<K, V, H, E>::erase(Iterator it) {
+template <typename K, typename V, typename H, typename E, typename A>
+void LruCache<K, V, H, E, A>::erase(Iterator it) {
     auto &node = *it;
     hash_.erase(hash_.iterator_to(node));
     list_.erase(it);
-    delete &node;
+    node.~Node();
+    Allocator{}.deallocate(&node, 1);
 }
 
-template <typename K, typename V, typename H, typename E>
-void LruCache<K, V, H, E>::touch(TimePoint now, Iterator it) {
+template <typename K, typename V, typename H, typename E, typename A>
+void LruCache<K, V, H, E, A>::touch(TimePoint now, Iterator it) {
     auto &node = *it;
     node.deadline_ = now + timeout_;
     list_.splice(list_.end(), list_, it);
 }
 
-template <typename K, typename V, typename H, typename E>
-auto LruCache<K, V, H, E>::alloc_buckets(std::size_t n) -> BucketTraits {
+template <typename K, typename V, typename H, typename E, typename A>
+auto LruCache<K, V, H, E, A>::alloc_buckets(std::size_t n) -> BucketTraits {
     auto const buckets = new typename UnorderedSet::bucket_type[n];
     return {buckets, n};
 }

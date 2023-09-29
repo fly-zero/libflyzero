@@ -10,6 +10,9 @@
         "--header-insertion=iwyu",
         "--pch-storage=disk",
     ],
-    "cmake.generator": "Unix Makfiles",
-    "editor.formatOnType": true
+    "cmake.generator": "Unix Makefiles",
+    "editor.formatOnType": true,
+    "cSpell.words": [
+        "fattach"
+    ]
 }
