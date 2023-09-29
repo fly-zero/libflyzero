@@ -15,13 +15,37 @@ template <typename K, typename V, typename H = std::hash<K>,
           typename E = std::equal_to<K>,
           typename A = std::allocator<std::pair<K, V>>>
 class LruCache {
+    /**
+     * @brief 链表钩子
+     */
     using ListHook = boost::intrusive::list_member_hook<>;
+
+    /**
+     * @brief 哈希表钩子
+     */
     using HashHook = boost::intrusive::unordered_set_member_hook<>;
+
+    /**
+     * @brief 时间点
+     */
     using TimePoint = std::chrono::steady_clock::time_point;
 
+    /**
+     * @brief 结点
+     */
     struct Node {
+        /**
+         * @brief 构造 Node
+         *
+         * @param deadline 结点超时时间
+         * @param key 结点的键
+         * @param value 结点的值
+         */
         Node(TimePoint deadline, K key, V value);
 
+        /**
+         * @brief 析构 Node
+         */
         ~Node() = default;
 
         /**
@@ -39,14 +63,23 @@ class LruCache {
         V value_;             ///< 值
     };
 
+    /**
+     * @brief 分配器
+     */
     using Allocator =
         typename std::allocator_traits<A>::template rebind_alloc<Node>;
 
+    /**
+     * @brief 哈希函数
+     */
     struct Hash : public H {
         using H::operator();
         std::size_t operator()(const Node &node) const;
     };
 
+    /**
+     * @brief 比较函数
+     */
     struct Equal : public E {
         using E::operator();
 
@@ -57,10 +90,16 @@ class LruCache {
         bool operator()(const Node &lhs, const U &rhs) const;
     };
 
+    /**
+     * @brief 链表
+     */
     using List = boost::intrusive::list<
         Node, boost::intrusive::member_hook<Node, ListHook, &Node::list_hook_>,
         boost::intrusive::constant_time_size<true>>;
 
+    /**
+     * @brief 哈希表
+     */
     using UnorderedSet = boost::intrusive::unordered_set<
         Node, boost::intrusive::member_hook<Node, HashHook, &Node::hash_hook_>,
         boost::intrusive::equal<Equal>, boost::intrusive::hash<Hash>,
@@ -68,13 +107,35 @@ class LruCache {
         boost::intrusive::store_hash<true>,
         boost::intrusive::constant_time_size<false>>;
 
+    /**
+     * @brief 哈希表桶萃取器
+     */
     using BucketTraits = typename UnorderedSet::bucket_traits;
 
 public:
+    /**
+     * @brief 超时时间
+     */
     using Duration = std::chrono::steady_clock::duration;
+
+    /**
+     * @brief 迭代器
+     */
     using Iterator = typename List::iterator;
+
+    /**
+     * @brief 常量迭代器
+     */
     using ConstIterator = typename List::const_iterator;
 
+private:
+    /**
+     * @brief 配置元组，包含哈希函数、比较函数、分配器、超时时间
+     * @note 利用 std::tuple 压缩空类型，减少内存占用
+     */
+    typedef std::tuple<Hash, Equal, Allocator, Duration> ConfigTuple;
+
+public:
     /**
      * @brief 构造函数
      */
@@ -191,8 +252,32 @@ protected:
      */
     static BucketTraits alloc_buckets(std::size_t n);
 
+    /**
+     * @brief 获取哈希函数
+     * @return H 哈希函数
+     */
+    Hash &get_hash() { return std::get<0>(config_tuple_); }
+
+    /**
+     * @brief 获取比较函数
+     * @return E 比较函数
+     */
+    Equal &get_equal() { return std::get<1>(config_tuple_); }
+
+    /**
+     * @brief 获取分配器
+     * @return Allocator 分配器
+     */
+    Allocator &get_allocator() { return std::get<2>(config_tuple_); }
+
+    /**
+     * @brief 获取超时时间
+     * @return Duration 超时时间
+     */
+    Duration get_timeout() const { return std::get<3>(config_tuple_); }
+
 private:
-    Duration timeout_;                      ///< 超时时间
+    ConfigTuple config_tuple_;              ///< 配置元组
     List list_;                             ///< 链表
     UnorderedSet hash_{alloc_buckets(16)};  ///< 哈希表
 };
@@ -221,7 +306,8 @@ bool LruCache<K, V, H, E, A>::Equal::operator()(const Node &lhs,
 }
 
 template <typename K, typename V, typename H, typename E, typename A>
-LruCache<K, V, H, E, A>::LruCache(Duration timeout) : timeout_(timeout) {}
+LruCache<K, V, H, E, A>::LruCache(Duration timeout)
+    : config_tuple_{{}, {}, {}, timeout} {}
 
 template <typename K, typename V, typename H, typename E, typename A>
 LruCache<K, V, H, E, A>::~LruCache() {
@@ -241,7 +327,7 @@ auto LruCache<K, V, H, E, A>::find(const K &key) -> Iterator {
 template <typename K, typename V, typename H, typename E, typename A>
 template <typename U>
 auto LruCache<K, V, H, E, A>::find(const U &key) -> Iterator {
-    auto const it = hash_.find(key, Hash{}, Equal{});
+    auto const it = hash_.find(key, get_hash(), get_equal());
     if (it == hash_.end()) return list_.end();
     auto &node = *it;
     auto const list_it = list_.iterator_to(node);
@@ -260,7 +346,7 @@ auto LruCache<K, V, H, E, A>::find(const K &key) const -> ConstIterator {
 template <typename K, typename V, typename H, typename E, typename A>
 template <typename U>
 auto LruCache<K, V, H, E, A>::find(const U &key) const -> ConstIterator {
-    auto const it = hash_.find(key, Hash{}, Equal{});
+    auto const it = hash_.find(key, get_hash(), get_equal());
     if (it == hash_.end()) return list_.end();
     auto &node = *it;
     auto const list_it = list_.iterator_to(node);
@@ -273,16 +359,16 @@ auto LruCache<K, V, H, E, A>::insert(TimePoint now, K key, V value)
     std::pair<Iterator, bool> ret;
     typename UnorderedSet::insert_commit_data commit_data;
     auto const [it, inserted] =
-        hash_.insert_check(key, Hash{}, Equal{}, commit_data);
+        hash_.insert_check(key, get_hash(), get_equal(), commit_data);
     if (!inserted) {
         // 结点已存在，返回已存在的结点
         auto const list_it = list_.iterator_to(*it);
         ret = {list_it, false};
     } else {
         // 结点不存在，创建新结点
-        auto const ptr = Allocator{}.allocate(1);
-        auto const node =
-            new (ptr) Node(now + timeout_, std::move(key), std::move(value));
+        auto const ptr = get_allocator().allocate(1);
+        auto const node = new (ptr)
+            Node(now + get_timeout(), std::move(key), std::move(value));
         list_.push_back(*node);
         hash_.insert_commit(*node, commit_data);
         ret = {list_.iterator_to(*node), true};
@@ -304,13 +390,13 @@ void LruCache<K, V, H, E, A>::erase(Iterator it) {
     hash_.erase(hash_.iterator_to(node));
     list_.erase(it);
     node.~Node();
-    Allocator{}.deallocate(&node, 1);
+    get_allocator().deallocate(&node, 1);
 }
 
 template <typename K, typename V, typename H, typename E, typename A>
 void LruCache<K, V, H, E, A>::touch(TimePoint now, Iterator it) {
     auto &node = *it;
-    node.deadline_ = now + timeout_;
+    node.deadline_ = now + get_timeout();
     list_.splice(list_.end(), list_, it);
 }
 
