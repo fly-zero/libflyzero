@@ -11,32 +11,46 @@
 
 namespace flyzero {
 
-template <typename K, typename V, typename H = std::hash<K>,
-          typename E = std::equal_to<K>,
-          typename A = std::allocator<std::pair<K, V>>>
-class LruCache {
-    /**
-     * @brief 链表钩子
-     */
-    using ListHook = boost::intrusive::list_member_hook<>;
-
-    /**
-     * @brief 哈希表钩子
-     */
-    using HashHook = boost::intrusive::unordered_set_member_hook<>;
-
+/**
+ * @brief LRU 结点基类
+ */
+struct LruNodeBase : boost::intrusive::list_base_hook<>,
+                     boost::intrusive::unordered_set_base_hook<> {
     /**
      * @brief 时间点
      */
     using TimePoint = std::chrono::steady_clock::time_point;
 
     /**
+     * @brief 构造 LruNodeBase
+     * @param deadline 超时时间
+     */
+    explicit LruNodeBase(TimePoint deadline);
+
+    TimePoint deadline_;  ///< 超时时间
+};
+
+/**
+ * @brief LRU 缓存
+ *
+ * @tparam K 键类型
+ * @tparam V 值类型
+ * @tparam H 哈希函数类型
+ * @tparam E 比较函数类型
+ * @tparam A 分配器类型
+ */
+template <typename K, typename V, typename H = std::hash<K>,
+          typename E = std::equal_to<K>,
+          typename A = std::allocator<std::pair<K, V>>>
+class LruCache {
+    using TimePoint = LruNodeBase::TimePoint;
+
+    /**
      * @brief 结点
      */
-    struct Node {
+    struct Node : LruNodeBase {
         /**
          * @brief 构造 Node
-         *
          * @param deadline 结点超时时间
          * @param key 结点的键
          * @param value 结点的值
@@ -56,11 +70,8 @@ class LruCache {
         void operator=(Node const &) = delete;
         void operator=(Node &&) = delete;
 
-        ListHook list_hook_;  ///< 链表节点钩子
-        HashHook hash_hook_;  ///< 哈希表节点钩子
-        TimePoint deadline_;  ///< 超时时间
-        K key_;               ///< 键
-        V value_;             ///< 值
+        const K key_;  ///< 键
+        V value_;      ///< 值
     };
 
     /**
@@ -93,16 +104,15 @@ class LruCache {
     /**
      * @brief 链表
      */
-    using List = boost::intrusive::list<
-        Node, boost::intrusive::member_hook<Node, ListHook, &Node::list_hook_>,
-        boost::intrusive::constant_time_size<true>>;
+    using List =
+        boost::intrusive::list<LruNodeBase,
+                               boost::intrusive::constant_time_size<true>>;
 
     /**
      * @brief 哈希表
      */
     using UnorderedSet = boost::intrusive::unordered_set<
-        Node, boost::intrusive::member_hook<Node, HashHook, &Node::hash_hook_>,
-        boost::intrusive::equal<Equal>, boost::intrusive::hash<Hash>,
+        Node, boost::intrusive::equal<Equal>, boost::intrusive::hash<Hash>,
         boost::intrusive::power_2_buckets<true>,
         boost::intrusive::store_hash<true>,
         boost::intrusive::constant_time_size<false>>;
@@ -282,9 +292,11 @@ private:
     UnorderedSet hash_{alloc_buckets(16)};  ///< 哈希表
 };
 
+inline LruNodeBase::LruNodeBase(TimePoint deadline) : deadline_(deadline) {}
+
 template <typename K, typename V, typename H, typename E, typename A>
 LruCache<K, V, H, E, A>::Node::Node(TimePoint deadline, K key, V value)
-    : deadline_(deadline), key_(std::move(key)), value_(std::move(value)) {}
+    : LruNodeBase(deadline), key_(std::move(key)), value_(std::move(value)) {}
 
 template <typename K, typename V, typename H, typename E, typename A>
 std::size_t LruCache<K, V, H, E, A>::Hash::operator()(const Node &node) const {
@@ -386,7 +398,7 @@ auto LruCache<K, V, H, E, A>::insert(TimePoint now, K key, V value)
 
 template <typename K, typename V, typename H, typename E, typename A>
 void LruCache<K, V, H, E, A>::erase(Iterator it) {
-    auto &node = *it;
+    auto &node = reinterpret_cast<Node &>(*it);
     hash_.erase(hash_.iterator_to(node));
     list_.erase(it);
     node.~Node();
