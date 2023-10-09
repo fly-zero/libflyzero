@@ -203,13 +203,6 @@ public:
     bool empty() const { return list_.empty(); }
 
     /**
-     * @brief 查找元素
-     * @param key 键
-     * @return Iterator 元素迭代器
-     */
-    Iterator find(K const &key);
-
-    /**
      * @brief 异构查找元素
      * @tparam U 异构键
      * @param key 键
@@ -217,13 +210,6 @@ public:
      */
     template <typename U>
     Iterator find(U const &key);
-
-    /**
-     * @brief 查找元素
-     * @param key 键
-     * @return ConstIterator 元素迭代器
-     */
-    ConstIterator find(K const &key) const;
 
     /**
      * @brief 异构查找元素
@@ -253,6 +239,11 @@ public:
      * @brief 更新元素访问时间
      */
     void touch(TimePoint now, Iterator it);
+
+    /**
+     * @brief 获取桶数量
+     */
+    size_t bucket_count() const { return hash_.bucket_count(); }
 
 protected:
     /**
@@ -328,28 +319,10 @@ LruCache<K, V, H, E, A>::~LruCache() {
 }
 
 template <typename K, typename V, typename H, typename E, typename A>
-auto LruCache<K, V, H, E, A>::find(const K &key) -> Iterator {
-    auto const it = hash_.find(key);
-    if (it == hash_.end()) return list_.end();
-    auto &node = *it;
-    auto const list_it = list_.iterator_to(node);
-    return list_it;
-}
-
-template <typename K, typename V, typename H, typename E, typename A>
 template <typename U>
 auto LruCache<K, V, H, E, A>::find(const U &key) -> Iterator {
     auto const it = hash_.find(key, get_hash(), get_equal());
     if (it == hash_.end()) return list_.end();
-    auto &node = *it;
-    auto const list_it = list_.iterator_to(node);
-    return list_it;
-}
-
-template <typename K, typename V, typename H, typename E, typename A>
-auto LruCache<K, V, H, E, A>::find(const K &key) const -> ConstIterator {
-    auto const it = hash_.find(key);
-    if (it == hash_.end()) return list_.cend();
     auto &node = *it;
     auto const list_it = list_.iterator_to(node);
     return list_it;
