@@ -27,7 +27,29 @@ struct Equal {
     }
 };
 
-int main() {
+static void test_bucket_expand() {
+    flyzero::LruCache<std::string, int, Hash, Equal> cache{
+        std::chrono::seconds{10}};
+
+    // 获取初始桶数
+    auto const init_bucket_count = cache.bucket_count();
+
+    // 插入与桶数相同的元素
+    for (int i = 0; i <= init_bucket_count; ++i) {
+        cache.insert(std::chrono::steady_clock::now(), std::to_string(i), i);
+    }
+
+    // 获取扩容后的桶数
+    auto const bucket_count = cache.bucket_count();
+    assert(bucket_count > init_bucket_count);
+
+    // 查找所有元素
+    for (int i = 0; i <= init_bucket_count; ++i) {
+        assert(cache.find(std::to_string(i)) != cache.end());
+    }
+}
+
+int test_insert_find_touch() {
     flyzero::LruCache<std::string, int, Hash, Equal> cache{
         std::chrono::seconds{10}};
 
@@ -43,4 +65,9 @@ int main() {
     cache.touch(std::chrono::steady_clock::now(), it);
 
     return 0;
+}
+
+int main() {
+    test_bucket_expand();
+    test_insert_find_touch();
 }
