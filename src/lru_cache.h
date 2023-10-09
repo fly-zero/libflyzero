@@ -199,6 +199,11 @@ public:
     std::size_t size() const { return list_.size(); }
 
     /**
+     * @brief 获取桶数量
+     */
+    size_t bucket_count() const { return hash_.bucket_count(); }
+
+    /**
      * @brief 判断是否为空
      */
     bool empty() const { return list_.empty(); }
@@ -210,7 +215,7 @@ public:
      * @return Iterator 元素迭代器
      */
     template <typename U>
-    Iterator find(U const &key);
+    Iterator find(U const &key) requires std::regular_invocable<Equal, U, K>;
 
     /**
      * @brief 异构查找元素
@@ -219,7 +224,8 @@ public:
      * @return Iterator 元素迭代器
      */
     template <typename U>
-    ConstIterator find(U const &key) const;
+    ConstIterator find(
+        U const &key) const requires std::regular_invocable<Equal, U, K>;
 
     /**
      * @brief 插入元素
@@ -240,11 +246,6 @@ public:
      * @brief 更新元素访问时间
      */
     void touch(TimePoint now, Iterator it);
-
-    /**
-     * @brief 获取桶数量
-     */
-    size_t bucket_count() const { return hash_.bucket_count(); }
 
     /**
      * @brief 清理过期元素
@@ -341,7 +342,8 @@ LruCache<K, V, H, E, A>::~LruCache() {
 
 template <typename K, typename V, typename H, typename E, typename A>
 template <typename U>
-auto LruCache<K, V, H, E, A>::find(const U &key) -> Iterator {
+auto LruCache<K, V, H, E, A>::find(const U &key)
+    -> Iterator requires std::regular_invocable<Equal, U, K> {
     auto const it = hash_.find(key, get_hash(), get_equal());
     if (it == hash_.end()) return list_.end();
     auto &node = *it;
@@ -351,7 +353,8 @@ auto LruCache<K, V, H, E, A>::find(const U &key) -> Iterator {
 
 template <typename K, typename V, typename H, typename E, typename A>
 template <typename U>
-auto LruCache<K, V, H, E, A>::find(const U &key) const -> ConstIterator {
+auto LruCache<K, V, H, E, A>::find(const U &key) const
+    -> ConstIterator requires std::regular_invocable<Equal, U, K> {
     auto const it = hash_.find(key, get_hash(), get_equal());
     if (it == hash_.end()) return list_.end();
     auto &node = *it;
