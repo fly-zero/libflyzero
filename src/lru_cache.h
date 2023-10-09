@@ -257,6 +257,15 @@ public:
     size_t clear_expired(TimePoint now,
                          F fn) requires std::regular_invocable<F, K, V>;
 
+    /**
+     * @brief 清理过期元素
+     * @param now 当前时间
+     * @return size_t 清理的元素数量
+     */
+    size_t clear_expired(TimePoint now) {
+        return clear_expired(now, [](K, V) {});
+    }
+
 protected:
     /**
      * @brief 分配哈希表桶
