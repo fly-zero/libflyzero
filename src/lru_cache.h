@@ -7,6 +7,7 @@
 #include <boost/intrusive/unordered_set.hpp>
 #include <boost/intrusive/unordered_set_hook.hpp>
 #include <chrono>
+#include <concepts>
 #include <utility>
 
 namespace flyzero {
@@ -143,7 +144,7 @@ private:
      * @brief 配置元组，包含哈希函数、比较函数、分配器、超时时间
      * @note 利用 std::tuple 压缩空类型，减少内存占用
      */
-    typedef std::tuple<Hash, Equal, Allocator, Duration> ConfigTuple;
+    using ConfigTuple = std::tuple<Hash, Equal, Allocator, Duration>;
 
 public:
     /**
@@ -244,6 +245,17 @@ public:
      * @brief 获取桶数量
      */
     size_t bucket_count() const { return hash_.bucket_count(); }
+
+    /**
+     * @brief 清理过期元素
+     * @tparam F 回调函数类型，需要支持 operator()(K, V)
+     * @param now 当前时间
+     * @param fn 回调函数
+     * @return size_t 清理的元素数量
+     */
+    template <typename F>
+    size_t clear_expired(TimePoint now,
+                         F fn) requires std::regular_invocable<F, K, V>;
 
 protected:
     /**
@@ -383,6 +395,32 @@ void LruCache<K, V, H, E, A>::touch(TimePoint now, Iterator it) {
     auto &node = *it;
     node.deadline_ = now + get_timeout();
     list_.splice(list_.end(), list_, it);
+}
+
+template <typename K, typename V, typename H, typename E, typename A>
+template <typename F>
+size_t LruCache<K, V, H, E, A>::clear_expired(
+    TimePoint now, F fn) requires std::regular_invocable<F, K, V> {
+    size_t count = 0;
+    while (!list_.empty()) {
+        // 判断是否已过期
+        auto &node = reinterpret_cast<Node &>(list_.front());
+        if (node.deadline_ > now) break;
+
+        // 删除之前调用回调函数
+        fn(node.key_, node.value_);
+
+        // 删除结点
+        hash_.erase(hash_.iterator_to(node));
+        list_.pop_front();
+        node.~Node();
+        get_allocator().deallocate(&node, 1);
+
+        // 增加计数
+        ++count;
+    }
+
+    return count;
 }
 
 template <typename K, typename V, typename H, typename E, typename A>

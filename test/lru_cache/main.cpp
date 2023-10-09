@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <thread>
 
 struct Hash {
     std::size_t operator()(const std::string &key) const {
@@ -49,7 +50,7 @@ static void test_bucket_expand() {
     }
 }
 
-int test_insert_find_touch() {
+static void test_insert_find_touch() {
     flyzero::LruCache<std::string, int, Hash, Equal> cache{
         std::chrono::seconds{10}};
 
@@ -63,11 +64,29 @@ int test_insert_find_touch() {
 
     // 测试更新
     cache.touch(std::chrono::steady_clock::now(), it);
+}
 
-    return 0;
+static void test_expired() {
+    flyzero::LruCache<std::string, int, Hash, Equal> cache{
+        std::chrono::seconds{1}};
+
+    for (auto i = 0; i < 5; ++i) {
+        cache.insert(std::chrono::steady_clock::now(), std::to_string(i), i);
+        std::this_thread::sleep_for(std::chrono::milliseconds{300});
+    }
+
+    int next_expected = 0;
+    auto const n =
+        cache.clear_expired(std::chrono::steady_clock::now(),
+                            [&next_expected](const std::string &, int v) {
+                                assert(v == next_expected++);
+                            });
+
+    assert(n == 2);
 }
 
 int main() {
     test_bucket_expand();
     test_insert_find_touch();
+    test_expired();
 }
