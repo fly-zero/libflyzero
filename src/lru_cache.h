@@ -437,7 +437,11 @@ size_t LruCache<K, V, H, E, A>::clear_expired(
 
 template <typename K, typename V, typename H, typename E, typename A>
 auto LruCache<K, V, H, E, A>::alloc_buckets(std::size_t n) -> BucketTraits {
-    auto const buckets = new typename UnorderedSet::bucket_type[n];
+    using BucketAllocator = typename std::allocator_traits<
+        A>::template rebind_alloc<typename UnorderedSet::bucket_type>;
+    BucketAllocator bucket_allocator;
+    auto const buckets = bucket_allocator.allocate(n);
+    ::new (buckets) typename UnorderedSet::bucket_type[n];
     return {buckets, n};
 }
 
