@@ -123,6 +123,12 @@ class LruCache {
      */
     using BucketTraits = typename UnorderedSet::bucket_traits;
 
+    /**
+     * @brief 桶分配器
+     */
+    using BucketAllocator = typename std::allocator_traits<
+        A>::template rebind_alloc<typename UnorderedSet::bucket_type>;
+
 public:
     /**
      * @brief 超时时间
@@ -273,7 +279,7 @@ protected:
      * @param n 桶数量
      * @return BucketTraits 桶数组
      */
-    static BucketTraits alloc_buckets(std::size_t n);
+    BucketTraits alloc_buckets(std::size_t n);
 
     /**
      * @brief 获取哈希函数
@@ -300,9 +306,9 @@ protected:
     Duration get_timeout() const { return std::get<3>(config_tuple_); }
 
 private:
-    ConfigTuple config_tuple_;              ///< 配置元组
-    List list_;                             ///< 链表
-    UnorderedSet hash_{alloc_buckets(16)};  ///< 哈希表
+    ConfigTuple config_tuple_;  ///< 配置元组
+    List list_;                 ///< 链表
+    UnorderedSet hash_;         ///< 哈希表
 };
 
 inline LruNodeBase::LruNodeBase(TimePoint deadline) : deadline_(deadline) {}
@@ -332,12 +338,15 @@ bool LruCache<K, V, H, E, A>::Equal::operator()(const Node &lhs,
 
 template <typename K, typename V, typename H, typename E, typename A>
 LruCache<K, V, H, E, A>::LruCache(Duration timeout)
-    : config_tuple_{{}, {}, {}, timeout} {}
+    : config_tuple_{{}, {}, {}, timeout}, hash_{alloc_buckets(16)} {}
 
 template <typename K, typename V, typename H, typename E, typename A>
 LruCache<K, V, H, E, A>::~LruCache() {
     list_.clear();
-    hash_.clear_and_dispose([](Node *node) { delete node; });
+    hash_.clear_and_dispose([this](Node *node) {
+        node->~Node();
+        get_allocator().deallocate(node, 1);
+    });
 }
 
 template <typename K, typename V, typename H, typename E, typename A>
@@ -387,7 +396,16 @@ auto LruCache<K, V, H, E, A>::insert(TimePoint now, K key, V value)
             auto const buckets = hash_.bucket_pointer();
             auto const count = hash_.bucket_count();
             hash_.rehash(alloc_buckets(count * 2));
-            delete[] buckets;
+
+            // 释放旧桶
+            using bucket_type = typename UnorderedSet::bucket_type;
+            for (auto i = 0ul; i < count; ++i) {
+                buckets[i].~bucket_type();
+            }
+
+            // 释放旧桶内存
+            BucketAllocator bucket_allocator{get_allocator()};
+            bucket_allocator.deallocate(buckets, count);
         }
     }
     return ret;
@@ -437,9 +455,7 @@ size_t LruCache<K, V, H, E, A>::clear_expired(
 
 template <typename K, typename V, typename H, typename E, typename A>
 auto LruCache<K, V, H, E, A>::alloc_buckets(std::size_t n) -> BucketTraits {
-    using BucketAllocator = typename std::allocator_traits<
-        A>::template rebind_alloc<typename UnorderedSet::bucket_type>;
-    BucketAllocator bucket_allocator;
+    BucketAllocator bucket_allocator{get_allocator()};
     auto const buckets = bucket_allocator.allocate(n);
     ::new (buckets) typename UnorderedSet::bucket_type[n];
     return {buckets, n};
