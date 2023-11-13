@@ -156,7 +156,9 @@ public:
     /**
      * @brief 构造函数
      */
-    explicit LruCache(Duration timeout);
+    explicit LruCache(Duration timeout, Hash const &hash = Hash(),
+                      Equal const &equal = Equal(),
+                      Allocator const &alloc = Allocator());
 
     /**
      * @brief 析构函数
@@ -337,8 +339,9 @@ bool LruCache<K, V, H, E, A>::Equal::operator()(const Node &lhs,
 }
 
 template <typename K, typename V, typename H, typename E, typename A>
-LruCache<K, V, H, E, A>::LruCache(Duration timeout)
-    : config_tuple_{{}, {}, {}, timeout}, hash_{alloc_buckets(16)} {}
+LruCache<K, V, H, E, A>::LruCache(Duration timeout, Hash const &hash,
+                                  Equal const &equal, Allocator const &alloc)
+    : config_tuple_{hash, equal, alloc, timeout}, hash_{alloc_buckets(16)} {}
 
 template <typename K, typename V, typename H, typename E, typename A>
 LruCache<K, V, H, E, A>::~LruCache() {
