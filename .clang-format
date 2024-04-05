@@ -1,8 +1,14 @@
-# Base on Google C++ Style Guide
+# 基于 Google C++ 代码风格指南
 BasedOnStyle: Google
 
-# Indentation
+# 缩进宽度
 IndentWidth: 4
 
-# Indentation for access modifiers
+# 属性访问修饰符缩进
 AccessModifierOffset: -4
+
+# 最大行长度
+ColumnLimit: 100
+
+# 
+BinPackParameters: false

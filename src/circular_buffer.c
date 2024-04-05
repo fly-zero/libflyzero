@@ -17,20 +17,40 @@
 
 #define __cache_aligned __attribute__((aligned(CACHE_LINE_SIZE)))
 
+#define __var_name_concat(name, line) name##line
+
+#define __var_name(name, line) __var_name_concat(name, line)
+
+#define __unique_var(name) __var_name(name, __LINE__)
+
+#define __cache_aligned __attribute__((aligned(CACHE_LINE_SIZE)))
+
+#define __cache_line_padding char __unique_var(cache_line_padding)[0] __cache_aligned
+
+#ifndef likely
+#define likely(x) (__builtin_expect(!!(x), 1))
+#endif
+
+#ifndef unlikely
+#define unlikely(x) (__builtin_expect(!!(x), 0))
+#endif
+
 struct circular_buffer_index {
     size_t value;  ///< 索引
-} __cache_aligned;
+};
 
 struct circular_buffer_header {
-    struct circular_buffer_index r;     ///< 写缓冲区上下文
-    struct circular_buffer_index w;     ///< 读缓冲区上下文
-    size_t capacity;                    ///< 缓冲区容量
-    size_t private_size;                ///< 私有数据大小
-    long page_mask;                     ///< 页掩码
-    int flag;                           ///< 标志
-    char name[64];                      ///< 共享内存对象名称
-    char cache_line[0] __cache_aligned; ///< 缓存行对齐填充
-    char private_data[0];               ///< 私有数据
+    struct circular_buffer_index r;  ///< 写缓冲区上下文
+    __cache_line_padding;            ///< 缓存行对齐填充
+    struct circular_buffer_index w;  ///< 读缓冲区上下文
+    __cache_line_padding;            ///< 缓存行对齐填充
+    size_t capacity;                 ///< 缓冲区容量
+    size_t private_size;             ///< 私有数据大小
+    long page_mask;                  ///< 页掩码
+    int flag;                        ///< 标志
+    char name[64];                   ///< 共享内存对象名称
+    __cache_line_padding;            ///< 缓存行对齐填充
+    char private_data[0];            ///< 私有数据
 };
 
 static inline size_t readable_size(struct circular_buffer_header *cb) {
@@ -45,6 +65,14 @@ static inline size_t aligned_header_size(size_t private_size, long page_mask) {
     return (sizeof(struct circular_buffer_header) + private_size + page_mask) & (~page_mask);
 }
 
+static inline char *buffer_start(struct circular_buffer_header *cb) {
+    return (char *)cb + aligned_header_size(cb->private_size, cb->page_mask);
+}
+
+static inline char *buffer_pos(struct circular_buffer_header *cb, size_t pos) {
+    return buffer_start(cb) + (pos & (cb->capacity - 1));
+}
+
 static void *map_shared_memory(int const shmfd, size_t head_size, size_t const capacity) {
     // head_size 和 capacity 必须是系统页大小的整数倍
     assert(head_size > 0);
@@ -54,23 +82,23 @@ static void *map_shared_memory(int const shmfd, size_t head_size, size_t const c
 
     // 先预订 total + capacity 长度的地址空间
     size_t const total = capacity + head_size;
-    void *addr = mmap(NULL, total + capacity, PROT_READ | PROT_WRITE,
-                      MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (!addr) goto ERROR_RETURN;
+    void *addr =
+        mmap(NULL, total + capacity, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if unlikely (unlikely(!addr)) goto ERROR_RETURN;
 
     // 将共享内存的 [0, total) 段映射到预订的内存 [addr, addr + total) 段上
     int flags = MAP_SHARED | MAP_FIXED | (shmfd == -1 ? MAP_ANONYMOUS : 0);
     int prot = PROT_READ | PROT_WRITE;
     void *new_addr = mmap(addr, total, prot, flags, shmfd, 0);
-    if (new_addr != addr) {
+    if unlikely (new_addr != addr) {
         goto ERROR_RETURN;
     }
 
     // 创建地址相邻的镜像内存区
-    // 将共享内存 [head_size, total) 段内存再次映射到预订的内存 [addr + total, addr + total + capacity) 段上
-    if (mremap((char *)addr + head_size, 0, capacity,
-               MREMAP_MAYMOVE | MREMAP_FIXED,
-               (char *)addr + total) != (char *)addr + total) {
+    // 将共享内存 [head_size, total) 段内存再次映射到预订的内存 [addr + total, addr + total +
+    // capacity) 段上
+    if unlikely (mremap((char *)addr + head_size, 0, capacity, MREMAP_MAYMOVE | MREMAP_FIXED,
+                        (char *)addr + total) != (char *)addr + total) {
         goto ERROR_RETURN;
     }
 
@@ -84,8 +112,10 @@ ERROR_RETURN:
     return NULL;
 }
 
-circular_buffer *circular_buffer_create(
-    const char *name, size_t capacity, size_t private_size, int const flag) {
+circular_buffer *circular_buffer_create(const char *name,
+                                        size_t capacity,
+                                        size_t private_size,
+                                        int const flag) {
     assert(capacity > 0);
     int const anonymous = name ? 0 : 1;
     int shmfd;
@@ -93,19 +123,18 @@ circular_buffer *circular_buffer_create(
         shmfd = -1;
     else {
         // 创建共享内存对象
-        shmfd = shm_open(name, O_RDWR | O_CREAT | O_EXCL,
-                         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
+        shmfd = shm_open(name, O_RDWR | O_CREAT | O_EXCL, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP);
         if (shmfd < 0) return NULL;
     }
 
     struct circular_buffer_header *header =
         circular_buffer_fcreate(shmfd, capacity, private_size, flag);
-    if (!header) {
+    if unlikely (!header) {
         close(shmfd);
         return NULL;
     }
 
-    if (!anonymous) {
+    if likely (!anonymous) {
         // 保存共享内存对象名称
         strcpy(header->name, name);
         close(shmfd);
@@ -114,8 +143,10 @@ circular_buffer *circular_buffer_create(
     return header;
 }
 
-circular_buffer *circular_buffer_fcreate(
-    int const shmfd, size_t capacity, size_t private_size, int const flag) {
+circular_buffer *circular_buffer_fcreate(int const shmfd,
+                                         size_t capacity,
+                                         size_t private_size,
+                                         int const flag) {
     // 获取系统页大小
     long const page_mask = sysconf(_SC_PAGESIZE) - 1;
 
@@ -126,13 +157,13 @@ circular_buffer *circular_buffer_fcreate(
     size_t const aligned_head_size = aligned_header_size(private_size, page_mask);
 
     // 设置共享内存大小
-    if (shmfd >= 0 && ftruncate(shmfd, capacity + aligned_head_size) < 0) {
+    if unlikely (shmfd >= 0 && ftruncate(shmfd, capacity + aligned_head_size) < 0) {
         return NULL;
     }
 
     // 映射共享内存
     struct circular_buffer_header *header = map_shared_memory(shmfd, aligned_head_size, capacity);
-    if (!header) return NULL;
+    if unlikely (!header) return NULL;
 
     // 初始共享内存队列头
     header->r.value = 0;
@@ -151,7 +182,7 @@ circular_buffer *circular_buffer_attach(const char *name) {
     // 打开共享内存对象
     struct circular_buffer_header *header = NULL;
     int const shmfd = shm_open(name, O_RDWR, 0);
-    if (shmfd < 0) return header;
+    if unlikely (shmfd < 0) return header;
 
     // 映射共享内存
     header = circular_buffer_fattach(shmfd);
@@ -165,7 +196,7 @@ circular_buffer *circular_buffer_fattach(int const shmfd) {
     // 从共享内存对象文件中读出 header 的副本
     struct circular_buffer_header header;
     ssize_t const nread = read(shmfd, &header, sizeof header);
-    if (nread == sizeof header) {
+    if likely (nread == sizeof header) {
         lseek(shmfd, 0, SEEK_SET);
         size_t head_size = aligned_header_size(header.private_size, header.page_mask);
         return map_shared_memory(shmfd, head_size, header.capacity);
@@ -185,10 +216,8 @@ struct buffer_piece circular_buffer_get_writable(circular_buffer *cb) {
     struct buffer_piece ret = {};
     struct circular_buffer_header *header = (struct circular_buffer_header *)cb;
     ret.size = writable_size(header);
-    size_t const aligned_head_size =
-        aligned_header_size(header->private_size, header->page_mask);
-    ret.data = (char *)header + aligned_head_size +
-               (header->w.value & (header->capacity - 1));
+    size_t const aligned_head_size = aligned_header_size(header->private_size, header->page_mask);
+    ret.data = buffer_pos(header, header->w.value);
     return ret;
 }
 
@@ -197,10 +226,8 @@ struct buffer_piece circular_buffer_get_readable(circular_buffer *cb) {
     struct buffer_piece ret = {};
     struct circular_buffer_header *header = (struct circular_buffer_header *)cb;
     ret.size = readable_size(header);
-    size_t const aligned_head_size =
-        aligned_header_size(header->private_size, header->page_mask);
-    ret.data = (char *)header + aligned_head_size +
-               (header->r.value & (header->capacity - 1));
+    size_t const aligned_head_size = aligned_header_size(header->private_size, header->page_mask);
+    ret.data = buffer_pos(header, header->r.value);
     return ret;
 }
 
@@ -226,8 +253,7 @@ void circular_buffer_detach(circular_buffer *cb) {
     assert(cb);
     // 计算共享内存大小
     struct circular_buffer_header *header = (struct circular_buffer_header *)cb;
-    size_t const aligned_head_size =
-        aligned_header_size(header->private_size, header->page_mask);
+    size_t const aligned_head_size = aligned_header_size(header->private_size, header->page_mask);
 
     // 解除映射
     munmap(header, aligned_head_size + header->capacity + header->capacity);
@@ -242,8 +268,7 @@ void circular_buffer_destroy(circular_buffer *cb) {
     }
 
     // 计算共享内存大小
-    size_t const aligned_head_size =
-        aligned_header_size(header->private_size, header->page_mask);
+    size_t const aligned_head_size = aligned_header_size(header->private_size, header->page_mask);
 
     // 解除映射
     munmap(header, aligned_head_size + header->capacity + header->capacity);

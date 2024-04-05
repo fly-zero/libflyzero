@@ -7,10 +7,10 @@ extern "C" {
 #endif
 
 /**
- * \brief   环形缓冲区
- *          生产者与消费者同时访问缓冲区时无须加锁
- *          多个生产者访问同一个缓冲区时，生产者之间需要加锁
- *          多个消费者访问同一个缓冲区时，消费者之间需要加锁
+ * \brief 环形缓冲区
+ *        生产者与消费者同时访问缓冲区时无须加锁
+ *        多个生产者访问同一个缓冲区时，生产者之间需要加锁
+ *        多个消费者访问同一个缓冲区时，消费者之间需要加锁
  */
 typedef void circular_buffer;
 
@@ -37,8 +37,8 @@ circular_buffer* circular_buffer_create(
 /**
  * \brief 创建环形缓冲区
  *
- * \param shmfd        共享内存对象文件描述符，需要以O_RDWR方式打开；当shmfd值为-1时创建匿名缓冲区
- * \param capacity     缓冲区容量，实际分配的容量会向上对齐到4KB
+ * \param shmfd        共享内存对象文件描述符，需要以 O_RDWR 方式打开；当 shmfd 值为 -1 时创建匿名缓冲区
+ * \param capacity     缓冲区容量，实际分配的容量会向上对齐到 4KB
  * \param private_size 私有数据区大小，用于存储私有数据
  * \param flag         创建缓冲区时使用的标志，暂时未使用
  *
@@ -59,7 +59,7 @@ circular_buffer* circular_buffer_attach(const char* name);
 /**
  * \brief 附着到环形缓冲区
  *
- * \param shmfd 共享内存对象文件描述符，共享内存上的缓冲必须是已经初始化好的，shmfd必须是有效的值
+ * \param shmfd 共享内存对象文件描述符，共享内存上的缓冲必须是已经初始化好的，shmfd 必须是有效的值
  *
  * \return 成功时返回环形缓冲区对象指针，失败时返回空指针
  */
@@ -75,31 +75,28 @@ circular_buffer* circular_buffer_fattach(int shmfd);
 void * circular_buffer_get_private_data(circular_buffer* cb);
 
 /**
- * \brief 消费者接口，获取缓冲区对象中可读的buffer
+ * \brief 消费者接口，获取缓冲区对象中可读的 buffer
  *
  * \param cb 环形缓冲区对象指针，不可为空指针
  *
- * \return
- * 返回buffer_piece结构，其中data字段总是不为空，通过检测size字段长判断可读空间的大小
+ * \return 返回 buffer_piece 结构，其中 data 字段总是不为空，通过检测 size 字段长判断可读空间的大小
  */
 struct buffer_piece circular_buffer_get_readable(circular_buffer* cb);
 
 /**
- * \brief 生产者接口，获取缓冲区对象中可写的buffer
+ * \brief 生产者接口，获取缓冲区对象中可写的 buffer
  *
  * \param cb 环形缓冲区对象指针，不可为空指针
  *
- * \return
- * 返回buffer_piece结构，其中data字段总是不为空，通过检测size字段长判断可写空间的大小
+ * \return 返回 buffer_piece 结构，其中 data 字段总是不为空，通过检测 size 字段长判断可写空间的大小
  */
 struct buffer_piece circular_buffer_get_writable(circular_buffer* cb);
 
 /**
  * \brief 消费者接口，丢弃已读数据，调用此接口来通知缓冲区对象来移动读索引
  *
- * \param cb    环形缓冲区对象指针，不可为空指针
- * \param size
- * 已读数据长度，当size超过可读数据长度时，会丢弃当前可读数据的实际长度
+ * \param cb   环形缓冲区对象指针，不可为空指针
+ * \param size 已读数据长度，当 size 超过可读数据长度时，会丢弃当前可读数据的实际长度
  *
  * \return 返回实际丢弃的长度
  */
@@ -108,8 +105,8 @@ size_t circular_buffer_pop_data(circular_buffer* cb, size_t size);
 /**
  * \brief 生产者接口，通知已写入数据，调用此接口来通知缓冲区对象来移动写索引
  *
- * \param cb    环形缓冲区对象指针，不可为空指针
- * \param size  已写数据的长度，当size超过可写长度时，会自适应到可写的最大长度
+ * \param cb   环形缓冲区对象指针，不可为空指针
+ * \param size 已写数据的长度，当 size 超过可写长度时，会自适应到可写的最大长度
  *
  * \return 返回实际写入的长度
  */
@@ -123,8 +120,7 @@ size_t circular_buffer_push_data(circular_buffer* cb, size_t size);
 void circular_buffer_detach(circular_buffer* cb);
 
 /**
- * \brief
- * 释放内存，删除共享内存对象，变成匿名对象，无法再附着，当引用数为0时会被系统销毁
+ * \brief 释放内存，删除共享内存对象，变成匿名对象，无法再附着，当引用数为0时会被系统销毁
  *
  * \param cb 环形缓冲区对象指针，不可为空指针
  */
