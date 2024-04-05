@@ -40,7 +40,9 @@ struct LruNodeBase : boost::intrusive::list_base_hook<>,
  * @tparam E 比较函数类型
  * @tparam A 分配器类型
  */
-template <typename K, typename V, typename H = std::hash<K>,
+template <typename K,
+          typename V,
+          typename H = std::hash<K>,
           typename E = std::equal_to<K>,
           typename A = std::allocator<std::pair<K, V>>>
 class LruCache {
@@ -78,8 +80,7 @@ class LruCache {
     /**
      * @brief 分配器
      */
-    using Allocator =
-        typename std::allocator_traits<A>::template rebind_alloc<Node>;
+    using Allocator = typename std::allocator_traits<A>::template rebind_alloc<Node>;
 
     /**
      * @brief 哈希函数
@@ -105,18 +106,18 @@ class LruCache {
     /**
      * @brief 链表
      */
-    using List =
-        boost::intrusive::list<LruNodeBase,
-                               boost::intrusive::constant_time_size<true>>;
+    using List = boost::intrusive::list<LruNodeBase, boost::intrusive::constant_time_size<true>>;
 
     /**
      * @brief 哈希表
      */
-    using UnorderedSet = boost::intrusive::unordered_set<
-        Node, boost::intrusive::equal<Equal>, boost::intrusive::hash<Hash>,
-        boost::intrusive::power_2_buckets<true>,
-        boost::intrusive::store_hash<true>,
-        boost::intrusive::constant_time_size<false>>;
+    using UnorderedSet =
+        boost::intrusive::unordered_set<Node,
+                                        boost::intrusive::equal<Equal>,
+                                        boost::intrusive::hash<Hash>,
+                                        boost::intrusive::power_2_buckets<true>,
+                                        boost::intrusive::store_hash<true>,
+                                        boost::intrusive::constant_time_size<false>>;
 
     /**
      * @brief 哈希表桶萃取器
@@ -126,8 +127,8 @@ class LruCache {
     /**
      * @brief 桶分配器
      */
-    using BucketAllocator = typename std::allocator_traits<
-        A>::template rebind_alloc<typename UnorderedSet::bucket_type>;
+    using BucketAllocator = typename std::allocator_traits<A>::template rebind_alloc<
+        typename UnorderedSet::bucket_type>;
 
 public:
     /**
@@ -156,7 +157,8 @@ public:
     /**
      * @brief 构造函数
      */
-    explicit LruCache(Duration timeout, Hash const &hash = Hash(),
+    explicit LruCache(Duration timeout,
+                      Hash const &hash = Hash(),
                       Equal const &equal = Equal(),
                       Allocator const &alloc = Allocator());
 
@@ -232,8 +234,7 @@ public:
      * @return Iterator 元素迭代器
      */
     template <typename U>
-    ConstIterator find(
-        U const &key) const requires std::regular_invocable<Equal, U, K>;
+    ConstIterator find(U const &key) const requires std::regular_invocable<Equal, U, K>;
 
     /**
      * @brief 插入元素
@@ -263,8 +264,7 @@ public:
      * @return size_t 清理的元素数量
      */
     template <typename F>
-    size_t clear_expired(TimePoint now,
-                         F fn) requires std::regular_invocable<F, K, V>;
+    size_t clear_expired(TimePoint now, F fn) requires std::regular_invocable<F, K, V>;
 
     /**
      * @brief 清理过期元素
@@ -326,21 +326,21 @@ std::size_t LruCache<K, V, H, E, A>::Hash::operator()(const Node &node) const {
 
 template <typename K, typename V, typename H, typename E, typename A>
 template <typename U>
-bool LruCache<K, V, H, E, A>::Equal::operator()(const U &lhs,
-                                                const Node &rhs) const {
+bool LruCache<K, V, H, E, A>::Equal::operator()(const U &lhs, const Node &rhs) const {
     return this->operator()(lhs, rhs.key_);
 }
 
 template <typename K, typename V, typename H, typename E, typename A>
 template <typename U>
-bool LruCache<K, V, H, E, A>::Equal::operator()(const Node &lhs,
-                                                const U &rhs) const {
+bool LruCache<K, V, H, E, A>::Equal::operator()(const Node &lhs, const U &rhs) const {
     return this->operator()(lhs.key_, rhs);
 }
 
 template <typename K, typename V, typename H, typename E, typename A>
-LruCache<K, V, H, E, A>::LruCache(Duration timeout, Hash const &hash,
-                                  Equal const &equal, Allocator const &alloc)
+LruCache<K, V, H, E, A>::LruCache(Duration timeout,
+                                  Hash const &hash,
+                                  Equal const &equal,
+                                  Allocator const &alloc)
     : config_tuple_{hash, equal, alloc, timeout}, hash_{alloc_buckets(16)} {}
 
 template <typename K, typename V, typename H, typename E, typename A>
@@ -375,12 +375,10 @@ auto LruCache<K, V, H, E, A>::find(const U &key) const
 }
 
 template <typename K, typename V, typename H, typename E, typename A>
-auto LruCache<K, V, H, E, A>::insert(TimePoint now, K key, V value)
-    -> std::pair<Iterator, bool> {
+auto LruCache<K, V, H, E, A>::insert(TimePoint now, K key, V value) -> std::pair<Iterator, bool> {
     std::pair<Iterator, bool> ret;
     typename UnorderedSet::insert_commit_data commit_data;
-    auto const [it, inserted] =
-        hash_.insert_check(key, get_hash(), get_equal(), commit_data);
+    auto const [it, inserted] = hash_.insert_check(key, get_hash(), get_equal(), commit_data);
     if (!inserted) {
         // 结点已存在，返回已存在的结点
         auto const list_it = list_.iterator_to(*it);
@@ -388,8 +386,7 @@ auto LruCache<K, V, H, E, A>::insert(TimePoint now, K key, V value)
     } else {
         // 结点不存在，创建新结点
         auto const ptr = get_allocator().allocate(1);
-        auto const node = new (ptr)
-            Node(now + get_timeout(), std::move(key), std::move(value));
+        auto const node = new (ptr) Node(now + get_timeout(), std::move(key), std::move(value));
         list_.push_back(*node);
         hash_.insert_commit(*node, commit_data);
         ret = {list_.iterator_to(*node), true};
@@ -432,8 +429,8 @@ void LruCache<K, V, H, E, A>::touch(TimePoint now, Iterator it) {
 
 template <typename K, typename V, typename H, typename E, typename A>
 template <typename F>
-size_t LruCache<K, V, H, E, A>::clear_expired(
-    TimePoint now, F fn) requires std::regular_invocable<F, K, V> {
+size_t LruCache<K, V, H, E, A>::clear_expired(TimePoint now,
+                                              F fn) requires std::regular_invocable<F, K, V> {
     size_t count = 0;
     while (!list_.empty()) {
         // 判断是否已过期

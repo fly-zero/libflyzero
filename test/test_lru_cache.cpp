@@ -15,22 +15,15 @@ struct Hash {
 };
 
 struct Equal {
-    bool operator()(const std::string &lhs, const std::string &rhs) const {
-        return lhs == rhs;
-    }
+    bool operator()(const std::string &lhs, const std::string &rhs) const { return lhs == rhs; }
 
-    bool operator()(const std::string &lhs, const char *rhs) const {
-        return lhs == rhs;
-    }
+    bool operator()(const std::string &lhs, const char *rhs) const { return lhs == rhs; }
 
-    bool operator()(const char *lhs, const std::string &rhs) const {
-        return lhs == rhs;
-    }
+    bool operator()(const char *lhs, const std::string &rhs) const { return lhs == rhs; }
 };
 
 static void test_bucket_expand() {
-    flyzero::LruCache<std::string, int, Hash, Equal> cache{
-        std::chrono::seconds{10}};
+    flyzero::LruCache<std::string, int, Hash, Equal> cache{std::chrono::seconds{10}};
 
     // 获取初始桶数
     auto const init_bucket_count = cache.bucket_count();
@@ -51,12 +44,10 @@ static void test_bucket_expand() {
 }
 
 static void test_insert_find_touch() {
-    flyzero::LruCache<std::string, int, Hash, Equal> cache{
-        std::chrono::seconds{10}};
+    flyzero::LruCache<std::string, int, Hash, Equal> cache{std::chrono::seconds{10}};
 
     // 测试插入
-    auto const [it, inserted] =
-        cache.insert(std::chrono::steady_clock::now(), "hello", 1);
+    auto const [it, inserted] = cache.insert(std::chrono::steady_clock::now(), "hello", 1);
     assert(inserted);
 
     // 测试异构查询
@@ -67,8 +58,7 @@ static void test_insert_find_touch() {
 }
 
 static void test_expired() {
-    flyzero::LruCache<std::string, int, Hash, Equal> cache{
-        std::chrono::seconds{1}};
+    flyzero::LruCache<std::string, int, Hash, Equal> cache{std::chrono::seconds{1}};
 
     for (auto i = 0; i < 5; ++i) {
         cache.insert(std::chrono::steady_clock::now(), std::to_string(i), i);
@@ -76,11 +66,9 @@ static void test_expired() {
     }
 
     int next_expected = 0;
-    auto const n =
-        cache.clear_expired(std::chrono::steady_clock::now(),
-                            [&next_expected](const std::string &, int v) {
-                                assert(v == next_expected++);
-                            });
+    auto const n = cache.clear_expired(
+        std::chrono::steady_clock::now(),
+        [&next_expected](const std::string &, int v) { assert(v == next_expected++); });
 
     assert(n == 2);
 }

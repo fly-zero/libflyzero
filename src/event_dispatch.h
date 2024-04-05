@@ -14,11 +14,7 @@ namespace flyzero {
 
 class EventDispatch {
 public:
-    enum class Event : int {
-        read = EPOLLIN,
-        write = EPOLLOUT,
-        read_write = EPOLLIN | EPOLLOUT
-    };
+    enum class Event : int { read = EPOLLIN, write = EPOLLOUT, read_write = EPOLLIN | EPOLLOUT };
 
     class IoListener;
 
@@ -31,8 +27,7 @@ public:
 
 private:
     struct TimeoutListenerWrapper {
-        TimeoutListenerWrapper(TimeoutListener &listener, TimePoint now,
-                               TimeDuration interval);
+        TimeoutListenerWrapper(TimeoutListener &listener, TimePoint now, TimeDuration interval);
 
         bool operator>(TimeoutListenerWrapper const &other) const noexcept;
 
@@ -41,10 +36,9 @@ private:
         TimeDuration interval_;
     };
 
-    using TimeoutListenerQueue =
-        std::priority_queue<TimeoutListenerWrapper,
-                            std::vector<TimeoutListenerWrapper>,
-                            std::greater<TimeoutListenerWrapper>>;
+    using TimeoutListenerQueue = std::priority_queue<TimeoutListenerWrapper,
+                                                     std::vector<TimeoutListenerWrapper>,
+                                                     std::greater<TimeoutListenerWrapper>>;
 
 public:
     /**
@@ -107,8 +101,7 @@ public:
      * @param listener 监听器
      * @param timeout 超时时间
      */
-    void register_timeout_listener(TimeoutListener &listener,
-                                   TimeDuration timeout);
+    void register_timeout_listener(TimeoutListener &listener, TimeDuration timeout);
 
     /**
      * @brief 运行事件循环
@@ -171,8 +164,9 @@ struct EventDispatch::TimeoutListener {
     virtual bool on_timeout(TimePoint now) = 0;
 };
 
-inline EventDispatch::TimeoutListenerWrapper::TimeoutListenerWrapper(
-    TimeoutListener &listener, TimePoint now, TimeDuration interval)
+inline EventDispatch::TimeoutListenerWrapper::TimeoutListenerWrapper(TimeoutListener &listener,
+                                                                     TimePoint now,
+                                                                     TimeDuration interval)
     : listener_{&listener}, deadline_{now + interval}, interval_{interval} {}
 
 inline bool EventDispatch::TimeoutListenerWrapper::operator>(
@@ -181,16 +175,14 @@ inline bool EventDispatch::TimeoutListenerWrapper::operator>(
 }
 
 inline void EventDispatch::register_loop_listener(LoopListener &listener) {
-    auto const it =
-        std::find(loop_listeners_.begin(), loop_listeners_.end(), &listener);
+    auto const it = std::find(loop_listeners_.begin(), loop_listeners_.end(), &listener);
     if (it == loop_listeners_.end()) {
         loop_listeners_.push_back(&listener);
     }
 }
 
 inline void EventDispatch::unregister_loop_listener(LoopListener &listener) {
-    auto const it =
-        std::find(loop_listeners_.begin(), loop_listeners_.end(), &listener);
+    auto const it = std::find(loop_listeners_.begin(), loop_listeners_.end(), &listener);
     if (it != loop_listeners_.end()) {
         loop_listeners_.erase(it);
     }
@@ -217,8 +209,7 @@ inline void EventDispatch::on_loop() {
 
 inline EventDispatch::IoListener::IoListener(int fd) : fd_{fd} {}
 
-inline EventDispatch::IoListener::IoListener(FileDescriptor &&fd) noexcept
-    : fd_{std::move(fd)} {}
+inline EventDispatch::IoListener::IoListener(FileDescriptor &&fd) noexcept : fd_{std::move(fd)} {}
 
 inline int EventDispatch::IoListener::fd() const noexcept { return fd_.get(); }
 

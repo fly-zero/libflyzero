@@ -125,16 +125,14 @@ inline bool FileDescriptor::set_nonblocking() const noexcept {
 
 inline FileDescriptor::operator bool(void) const noexcept { return fd_ != -1; }
 
-inline FileDescriptor& FileDescriptor::operator=(
-    const FileDescriptor& other) noexcept {
+inline FileDescriptor& FileDescriptor::operator=(const FileDescriptor& other) noexcept {
     if (this != &other) [[likely]] {
         *this = other.clone();
     }
     return *this;
 }
 
-inline FileDescriptor& FileDescriptor::operator=(
-    FileDescriptor&& other) noexcept {
+inline FileDescriptor& FileDescriptor::operator=(FileDescriptor&& other) noexcept {
     if (this != &other) [[likely]] {
         if (fd_ >= 0) {
             ::close(fd_);
@@ -144,8 +142,7 @@ inline FileDescriptor& FileDescriptor::operator=(
     return *this;
 }
 
-inline bool FileDescriptor::operator<(
-    const FileDescriptor& other) const noexcept {
+inline bool FileDescriptor::operator<(const FileDescriptor& other) const noexcept {
     return fd_ < other.fd_;
 }
 

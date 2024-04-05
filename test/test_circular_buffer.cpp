@@ -1,8 +1,7 @@
-#include <cassert>
-
-#include <thread>
-
 #include <circular_buffer.h>
+
+#include <cassert>
+#include <thread>
 
 // 测试单生产者单消费者
 void test_sp_sc(size_t private_size) {
@@ -21,7 +20,7 @@ void test_sp_sc(size_t private_size) {
 
     // 创建生产者线程
     std::thread producer([cb] {
-        for (int i = 0; i < N; ) {
+        for (int i = 0; i < N;) {
             auto writable = circular_buffer_get_writable(cb);
             if (writable.size < sizeof(int)) {
                 __builtin_ia32_pause();
@@ -40,7 +39,7 @@ void test_sp_sc(size_t private_size) {
 
     // 创建消费者线程
     std::thread consumer([cb, &producer_done] {
-        for (int i = 0; i < N; ) {
+        for (int i = 0; i < N;) {
             auto readable = circular_buffer_get_readable(cb);
             if (readable.size < sizeof(int)) {
                 if (producer_done) {

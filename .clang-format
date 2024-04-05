@@ -10,5 +10,8 @@ AccessModifierOffset: -4
 # 最大行长度
 ColumnLimit: 100
 
-# 
+# 超长函数形参每行一个
 BinPackParameters: false
+
+# 超长函数调用参数每行一个
+BinPackArguments: false
