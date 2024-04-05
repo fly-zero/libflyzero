@@ -22,30 +22,30 @@ struct buffer_piece {
 /**
  * \brief 创建环形缓冲区
  *
- * \param name      共享内存对象名称。如为空指针则创建无法附着的匿名缓冲区。
- *                  匿名缓冲区不创建共享内存对象，只能通过fork跨进程共享，无法通过exec跨进程共享。
- *                  命名缓冲区可以通过fork、exec跨进程共享。
- * \param capacity  缓冲区容量，实际分配的容量会向上对齐到4KB
- * \param flag      创建缓冲区时使用的标志（CB_READ_SEMA, CB_WRIT_SEMA,
- * CB_SHARED_SEMA）。
- *                  跨进程的匿名、命名缓冲区如果需要在进程间共享信号量，需要设置CB_SHARED_SEMA
+ * \param name         共享内存对象名称。如为空指针则创建无法附着的匿名缓冲区。
+ *                     匿名缓冲区不创建共享内存对象，只能通过 fork 跨进程共享，无法通过 exec 跨进程共享。
+ *                     命名缓冲区可以通过 fork、exec 跨进程共享。
+ * \param capacity     缓冲区容量，实际分配的容量会向上对齐到 4KB
+ * \param private_size 私有数据区大小，用于存储私有数据
+ * \param flag         创建缓冲区时使用的标志，暂时未使用
  *
  * \return 成功时返回环形缓冲区对象指针，失败时返回空指针
  */
-circular_buffer* circular_buffer_create(const char* name, size_t capacity,
-                                        int flag);
+circular_buffer* circular_buffer_create(
+    const char* name, size_t capacity, size_t private_size, int flag);
 
 /**
  * \brief 创建环形缓冲区
  *
- * \param shmfd
- * 共享内存对象文件描述符，需要以O_RDWR方式打开；当shmfd值为-1时创建匿名缓冲区
- * \param capacity  缓冲区容量，实际分配的容量会向上对齐到4KB
- * \param flag      创建缓冲区时使用的标志（CB_READ_SEMA, CB_WRIT_SEMA）
+ * \param shmfd        共享内存对象文件描述符，需要以O_RDWR方式打开；当shmfd值为-1时创建匿名缓冲区
+ * \param capacity     缓冲区容量，实际分配的容量会向上对齐到4KB
+ * \param private_size 私有数据区大小，用于存储私有数据
+ * \param flag         创建缓冲区时使用的标志，暂时未使用
  *
  * \return 成功时返回环形缓冲区对象指针，失败时返回空指针
  */
-circular_buffer* circular_buffer_fcreate(int shmfd, size_t capacity, int flag);
+circular_buffer* circular_buffer_fcreate(
+    int shmfd, size_t capacity, size_t private_size, int flag);
 
 /**
  * \brief 附着到一个命名环形缓冲区
@@ -59,12 +59,20 @@ circular_buffer* circular_buffer_attach(const char* name);
 /**
  * \brief 附着到环形缓冲区
  *
- * \param shmfd
- * 共享内存对象文件描述符，共享内存上的缓冲必须是已经初始化好的，shmfd必须是有效的值
+ * \param shmfd 共享内存对象文件描述符，共享内存上的缓冲必须是已经初始化好的，shmfd必须是有效的值
  *
  * \return 成功时返回环形缓冲区对象指针，失败时返回空指针
  */
 circular_buffer* circular_buffer_fattach(int shmfd);
+
+/**
+ * @brief 获取缓冲区对象中的私有数据
+ *
+ * \param cb 环形缓冲区对象指针，不可为空指针
+ *
+ * \return 返回私有数据区指针
+ */
+void * circular_buffer_get_private_data(circular_buffer* cb);
 
 /**
  * \brief 消费者接口，获取缓冲区对象中可读的buffer
