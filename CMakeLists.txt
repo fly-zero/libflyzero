@@ -20,7 +20,8 @@ add_library(flyzero STATIC
     src/tcp_connection.cpp
     src/tcp_server.cpp
     src/utility.cpp
-    src/circular_buffer.c)
+    src/circular_buffer.c
+    src/backtrace.c)
 
 add_subdirectory(test)
 

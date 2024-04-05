@@ -13,6 +13,9 @@
     "cmake.generator": "Unix Makefiles",
     "editor.formatOnType": true,
     "cSpell.words": [
-        "fattach"
+        "asymbol",
+        "fattach",
+        "minisymbols",
+        "openr"
     ]
 }

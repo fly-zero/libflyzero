@@ -15,3 +15,12 @@ BinPackParameters: false
 
 # 超长函数调用参数每行一个
 BinPackArguments: false
+
+# 对齐连续的声明
+AlignConsecutiveDeclarations: true
+
+# 对齐连续赋值
+AlignConsecutiveAssignments: true
+
+# 不允许单行 if 语句
+AllowShortIfStatementsOnASingleLine: false
