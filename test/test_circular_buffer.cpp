@@ -74,8 +74,14 @@ void test_attach() {
     auto const name = "test_attach";
 
     // 创建环形缓冲区
-    auto const cb1 = circular_buffer_create(name, 1024, 0, 0);
-    assert(cb1);
+    auto cb1 = circular_buffer_create(name, 1024, 0, 0);
+    if (!cb1) {
+        // 环形缓冲区已经存在
+        assert(errno == EEXIST);
+        cb1 = circular_buffer_attach(name);
+        assert(cb1);
+        return;
+    }
 
     // 附着环形缓冲区
     auto const cb2 = circular_buffer_attach(name);
