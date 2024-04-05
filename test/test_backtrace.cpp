@@ -1,6 +1,8 @@
 #include <unistd.h>
+#include <signal.h>
 
 #include <cassert>
+#include <csignal>
 #include <cstring>
 
 #include <stack>
@@ -31,8 +33,10 @@ static void stack_frame_callback(void        *opaque,
                                  const char  *function,
                                  const char  *file,
                                  unsigned int line_no) {
-    // 第 0 帧是 backtrace_dump，忽略
-    if (frame_no == 0) {
+    // 跳过栈帧
+    auto skip = reinterpret_cast<int *>(opaque);
+    if (*skip > 0) {
+        --*skip;
         return;
     }
 
@@ -55,7 +59,11 @@ static void do_something() {}
 // 函数 fun
 static void fun() {
     do_something();
-    call_and_record(backtrace_dump, stack_frame_callback, nullptr);
+
+    // 跳过栈数量
+    int skip = 1;
+    call_and_record(backtrace_dump, stack_frame_callback, &skip);
+
     do_something();
 }
 
@@ -80,19 +88,37 @@ static void test_backtrace_dump_save_and_load() {
     assert(pipe(fd) == 0);
 
     // 保存回溯信息
-    call_and_record(backtrace_dump_save, fd[0]);
+    call_and_record(backtrace_dump_save, fd[1]);
 
     // 关闭写端
-    close(fd[0]);
+    close(fd[1]);
+
+    // 跳过栈数量
+    int skip = 1;
 
     // 加载回溯信息
-    call_and_record(backtrace_dump_load, fd[1], stack_frame_callback, nullptr);
+    backtrace_dump_load(fd[0], stack_frame_callback, &skip);
 
     // 关闭读端
-    close(fd[1]);
+    close(fd[0]);
+}
+
+static void test_backtrace_dump_in_sigsegv() {
+    struct sigaction sa;
+    sa.sa_sigaction = [](int signo, siginfo_t *info, void *context) {
+        int skip = 5;
+        backtrace_dump(stack_frame_callback, &skip);
+        exit(0);
+    };
+    sa.sa_flags     = SA_SIGINFO;
+    sigemptyset(&sa.sa_mask);
+    assert(sigaction(SIGSEGV, &sa, nullptr) == 0);
+    int *p = nullptr;
+    *p     = 0;
 }
 
 int main() {
     call_and_record(test_backtrace_dump);
     call_and_record(test_backtrace_dump_save_and_load);
+    call_and_record(test_backtrace_dump_in_sigsegv);
 }

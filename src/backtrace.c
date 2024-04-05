@@ -197,7 +197,6 @@ int backtrace_dump_load(int fd, backtrace_dump_callback_t callback, void *opaque
 
     // 处理调用栈
     backtrace_dump_frames(frames, count, callback, opaque);
-    return 0;
 
     fclose(fp);
     return 0;
