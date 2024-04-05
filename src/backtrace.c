@@ -27,6 +27,13 @@ struct backtrace_addrinfo {
     unsigned int line_;      ///< 行号
 };
 
+/**
+ * @brief 获取给定地址的信息（函数名、源文件名、行号等）
+ *
+ * @param addr     地址
+ * @param addrinfo 地址信息
+ * @return int 0 成功，-1 失败
+ */
 static int backtrace_get_addrinfo(void *addr, struct backtrace_addrinfo *addrinfo) {
     assert(addrinfo);
 
@@ -106,6 +113,11 @@ static int backtrace_get_addrinfo(void *addr, struct backtrace_addrinfo *addrinf
     return 0;
 }
 
+/**
+ * @brief 释放地址信息中使用的资源
+ *
+ * @param addrinfo 地址信息
+ */
 static void backtrace_addrinfo_free(struct backtrace_addrinfo *addrinfo) {
     if (addrinfo) {
         if (addrinfo->syms_)
@@ -124,6 +136,14 @@ static void backtrace_addrinfo_free(struct backtrace_addrinfo *addrinfo) {
     }
 }
 
+/**
+ * @brief 获取调用栈
+ *
+ * @param frames   调用栈
+ * @param count    调用栈深度
+ * @param callback 栈帧处理回调
+ * @param opaque   回调参数
+ */
 static void backtrace_dump_frames(void                     *frames[],
                                   int                       count,
                                   backtrace_dump_callback_t callback,
