@@ -5,6 +5,7 @@
 #include "backtrace.h"
 
 #include <assert.h>
+#include <alloca.h>
 #include <bfd.h>
 #include <dlfcn.h>
 #include <execinfo.h>
@@ -27,34 +28,30 @@ struct backtrace_addrinfo {
     unsigned int line_;      ///< 行号
 };
 
+struct backtrace_frame_info {
+    void         *base_;    ///< 基地址
+    unsigned long offset_;  ///< 偏移
+    const char   *module_;  ///< 模块路径
+};
+
 /**
  * @brief 获取给定地址的信息（函数名、源文件名、行号等）
  *
- * @param addr     地址
+ * @param path     模块路径
+ * @param offset   模块内偏移
  * @param addrinfo 地址信息
  * @return int 0 成功，-1 失败
  */
-static int backtrace_get_addrinfo(void *addr, struct backtrace_addrinfo *addrinfo) {
+static int backtrace_get_addrinfo(
+    const struct backtrace_frame_info *frame_info, struct backtrace_addrinfo *addrinfo) {
+    assert(frame_info);
     assert(addrinfo);
-
-    // 获取 addr 所在的模块
-    Dl_info info;
-    if (dladdr(addr, &info) == 0) {
-        return -1;
-    }
-
-    // 获取模块的基地址
-    const char *path = info.dli_fname;
-    const char *base = info.dli_fbase;
-    if (!path || !base) {
-        return -1;
-    }
 
     // 初始化 bfd
     bfd_init();
 
     // 打开模块
-    bfd *bfd = bfd_openr(path, NULL);
+    bfd *bfd = bfd_openr(frame_info->module_, NULL);
     if (!bfd) {
         return -1;
     }
@@ -85,8 +82,8 @@ static int backtrace_get_addrinfo(void *addr, struct backtrace_addrinfo *addrinf
         return -1;
     }
 
-    // 计算偏移
-    long const offset = (uintptr_t)addr - (uintptr_t)base;
+    // 获取偏移
+    long const offset = frame_info->offset_;
 
     // 查找地址对应的文件、函数、行号
     for (struct bfd_section *section = bfd->sections; section; section = section->next) {
@@ -104,8 +101,8 @@ static int backtrace_get_addrinfo(void *addr, struct backtrace_addrinfo *addrinf
     }
 
     // 保存地址信息
-    addrinfo->module_ = strdup(path);
-    addrinfo->addr_   = addr;
+    addrinfo->module_ = frame_info->module_;
+    addrinfo->addr_   = frame_info->base_;
     addrinfo->bfd_    = bfd;
     addrinfo->syms_   = syms;
 
@@ -137,25 +134,51 @@ static void backtrace_addrinfo_free(struct backtrace_addrinfo *addrinfo) {
 }
 
 /**
+ * @brief 获取帧信息
+ *
+ * @param info        帧信息
+ * @param frames      帧地址
+ * @param module_size 模块缓冲区大小
+ */
+static void backtrace_fill_frame_info(struct backtrace_frame_info info[],
+                                      void                        *const frames[],
+                                      size_t                       count) {
+    assert(info);
+    assert(frames);
+    assert(count > 0);
+
+    for (size_t i = 0; i < count; ++i) {
+        Dl_info addr_info;
+        if (dladdr(frames[i], &addr_info) == 0) {
+            memset(&info[i], 0, sizeof(struct backtrace_frame_info));
+        }
+
+        info[i].base_   = addr_info.dli_fbase;
+        info[i].offset_ = (unsigned long)frames[i] - (unsigned long)addr_info.dli_fbase - 1; // SP 指向下一条指令，所以减 1 来指向当前指令
+        info[i].module_ = addr_info.dli_fname;
+    }
+}
+
+/**
  * @brief 获取调用栈
  *
- * @param frames   调用栈
- * @param count    调用栈深度
- * @param callback 栈帧处理回调
- * @param opaque   回调参数
+ * @param frame_info 调用栈
+ * @param count      调用栈深度
+ * @param callback   栈帧处理回调
+ * @param opaque     回调参数
  */
-static void backtrace_dump_frames(void                     *frames[],
+static void backtrace_dump_frames(const struct backtrace_frame_info frame_info[],
                                   int                       count,
                                   backtrace_dump_callback_t callback,
                                   void                     *opaque) {
-    assert(frames);
+    assert(frame_info);
     assert(count > 0);
     assert(callback);
 
     for (int i = 0; i < count; ++i) {
         struct backtrace_addrinfo addrinfo;
-        if (backtrace_get_addrinfo((char *)frames[i] - 1, &addrinfo) == 0) {
-            callback(opaque, i, frames[i], addrinfo.function_, addrinfo.file_, addrinfo.line_);
+        if (backtrace_get_addrinfo(&frame_info[i], &addrinfo) == 0) {
+            callback(opaque, i, addrinfo.addr_, addrinfo.function_, addrinfo.file_, addrinfo.line_);
             backtrace_addrinfo_free(&addrinfo);
         }
     }
@@ -171,8 +194,12 @@ int backtrace_dump(backtrace_dump_callback_t callback, void *opaque) {
         return -1;
     }
 
+    // 获取栈帧信息
+    struct backtrace_frame_info *frame_info = alloca(count * sizeof(struct backtrace_frame_info));
+    backtrace_fill_frame_info(frame_info, frames, count);
+
     // 处理调用栈
-    backtrace_dump_frames(frames, count, callback, opaque);
+    backtrace_dump_frames(frame_info, count, callback, opaque);
     return 0;
 }
 
@@ -184,15 +211,48 @@ int backtrace_dump_save(int fd) {
         return -1;
     }
 
+    // 获取栈帧信息
+    struct backtrace_frame_info *frame_info = alloca(count * sizeof(struct backtrace_frame_info));
+    backtrace_fill_frame_info(frame_info, frames, count);
+
     // 将地址写入文件
     FILE *fp = fdopen(fd, "w");
     if (!fp) {
         return -1;
     }
 
-    // 写入地址
+    // 写入栈帧数量
+    if (fwrite(&count, sizeof(int), 1, fp) != 1) {
+        fclose(fp);
+        return -1;
+    }
+
+    // 保存栈帧信息
     for (int i = 0; i < count; ++i) {
-        fwrite(&frames[i], sizeof(void *), 1, fp);
+        // 写基地址
+        if (fwrite(&frame_info[i].base_, sizeof(void *), 1, fp) != 1) {
+            fclose(fp);
+            return -1;
+        }
+
+        // 写偏移
+        if (fwrite(&frame_info[i].offset_, sizeof(unsigned long), 1, fp) != 1) {
+            fclose(fp);
+            return -1;
+        }
+
+        // 写模块路径长度，包含 '\0'
+        size_t len = strlen(frame_info[i].module_) + 1;
+        if (fwrite(&len, sizeof(size_t), 1, fp) != 1) {
+            fclose(fp);
+            return -1;
+        }
+
+        // 写模块路径
+        if (fwrite(frame_info[i].module_, len, 1, fp) != 1) {
+            fclose(fp);
+            return -1;
+        }
     }
 
     fclose(fp);
@@ -208,11 +268,43 @@ int backtrace_dump_load(int fd, backtrace_dump_callback_t callback, void *opaque
         return -1;
     }
 
-    // 读取地址
-    void *frames[BACKTRACE_MAX_DEPTH];
-    int   count = fread(frames, sizeof(void *), BACKTRACE_MAX_DEPTH, fp);
-    if (count <= 0) {
+    // 读取栈帧数量
+    int count;
+    if (fread(&count, sizeof(int), 1, fp) != 1 || count <= 0) {
+        fclose(fp);
         return -1;
+    }
+
+    // 分配栈帧信息内存
+    struct backtrace_frame_info *frames = alloca(count * sizeof(struct backtrace_frame_info));
+
+    // 读取栈帧信息
+    for (int i = 0; i < count; ++i) {
+        // 读基地址
+        if (fread(&frames[i].base_, sizeof(void *), 1, fp) != 1) {
+            fclose(fp);
+            return -1;
+        }
+
+        // 读偏移
+        if (fread(&frames[i].offset_, sizeof(unsigned long), 1, fp) != 1) {
+            fclose(fp);
+            return -1;
+        }
+
+        // 读模块路径长度
+        size_t len;
+        if (fread(&len, sizeof(size_t), 1, fp) != 1) {
+            fclose(fp);
+            return -1;
+        }
+
+        // 读模块路径
+        frames[i].module_ = alloca(len);
+        if (fread((void *)frames[i].module_, len, 1, fp) != 1) {
+            fclose(fp);
+            return -1;
+        }
     }
 
     // 处理调用栈
