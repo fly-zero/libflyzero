@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+
+#include <tuple>
+#include <string_view>
 #include <system_error>
 
 namespace flyzero {
@@ -22,6 +25,20 @@ inline uint32_t reverse_byte_order(const uint32_t val) {
 
 std::system_error system_error(int err, const char* format, ...)
     __attribute__((format(printf, 2, 3)));
+
+/**
+ * @brief 分割字符串
+ *
+ * @param str 被分割的字符串
+ * @param delim 分隔符
+ * @return std::pair<std::string_view, std::string_view> 分割后的字符串对
+ * @note 如果没有找到分隔符，则返回 {str, ""}
+ */
+inline std::pair<std::string_view, std::string_view> split(std::string_view str, char delim) {
+    auto pos = str.find(delim);
+    if (pos == std::string_view::npos) return {str, {}};
+    return {str.substr(0, pos), str.substr(pos + 1)};
+}
 
 }  // namespace utility
 }  // namespace flyzero

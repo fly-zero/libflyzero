@@ -10,3 +10,7 @@ add_executable(test_backtrace test_backtrace.cpp ${CMAKE_CURRENT_SOURCE_DIR}/../
 target_include_directories(test_backtrace PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)
 target_link_libraries(test_backtrace dl bfd)
 add_test(NAME test_backtrace COMMAND test_backtrace)
+
+add_executable(test_split test_split.cpp)
+target_include_directories(test_split PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../src)
+add_test(NAME test_split COMMAND test_split)
