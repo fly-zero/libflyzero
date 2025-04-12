@@ -23,4 +23,13 @@ AlignConsecutiveDeclarations: true
 AlignConsecutiveAssignments: true
 
 # 不允许单行 if 语句
-AllowShortIfStatementsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: true
+
+# 函数花括号换行
+BreakBeforeBraces: Custom
+
+# 函数花括号换行规则
+BraceWrapping:
+  AfterFunction: false
+  AfterClass: false
+  AfterNamespace: false

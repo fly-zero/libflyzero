@@ -12,38 +12,38 @@
 
 namespace flyzero {
 
-class TcpServer : public EventDispatch::IoListener {
+class tcp_server : public event_dispatch::io_listener {
 public:
     /**
      * @brief 构造函数
      * @param sock 套接字
      */
-    TcpServer(int sock);
+    tcp_server(int sock);
 
     /**
      * @brief 禁止拷贝
      */
-    TcpServer(const TcpServer &) = delete;
+    tcp_server(const tcp_server &) = delete;
 
     /**
      * @brief 移动构造函数
      */
-    TcpServer(TcpServer &&) = default;
+    tcp_server(tcp_server &&) = default;
 
     /**
      * @brief 析构函数
      */
-    ~TcpServer(void) override = default;
+    ~tcp_server(void) override = default;
 
     /**
      * @brief 禁止拷贝
      */
-    void operator=(const TcpServer &) = delete;
+    void operator=(const tcp_server &) = delete;
 
     /**
      * @brief 移动赋值
      */
-    TcpServer &operator=(TcpServer &&) = default;
+    tcp_server &operator=(tcp_server &&) = default;
 
 protected:
     /**
@@ -52,8 +52,9 @@ protected:
      * @param addr 地址
      * @param addrlen 地址长度
      */
-    virtual void on_accept(FileDescriptor &&sock, const sockaddr_storage &addr,
-                           socklen_t addrlen) = 0;
+    virtual void on_accept(file_descriptor        &&sock,
+                           const sockaddr_storage &addr,
+                           socklen_t               addrlen) = 0;
 
 protected:
     /**
@@ -77,6 +78,6 @@ protected:
     static int listen(const char *unix_path);
 };
 
-inline TcpServer::TcpServer(int sock) : IoListener(sock) {}
+inline tcp_server::tcp_server(int sock) : io_listener(sock) {}
 
 }  // namespace flyzero

@@ -8,50 +8,56 @@
 
 namespace flyzero {
 
-class TcpConnection : public EventDispatch::IoListener {
-    struct Deleter {
+class tcp_connection : public event_dispatch::io_listener {
+    struct deleter {
         void operator()(circular_buffer *cb) const noexcept;
     };
 
-    using CircularBufferPtr = std::unique_ptr<circular_buffer, Deleter>;
+    using cb = std::unique_ptr<circular_buffer, deleter>;
 
 public:
     /**
      * @brief 构造函数
+     *
      * @param sock 套接字
+     * @param rcb_size 读环形缓冲区大小
+     * @param wcb_size 写环形缓冲区大小
      */
-    explicit TcpConnection(int);
+    tcp_connection(int sock, size_t rcb_size, size_t wcb_size);
 
     /**
      * @brief 构造函数
+     *
      * @param sock 套接字
+     * @param rcb_size 读环形缓冲区大小
+     * @param wcb_size 写环形缓冲区大小
      */
-    explicit TcpConnection(FileDescriptor &&sock) noexcept;
+    tcp_connection(file_descriptor &&sock, size_t rcb_size, size_t wcb_size);
 
     /**
      * @brief 禁止拷贝
      */
-    TcpConnection(const TcpConnection &) = delete;
+    tcp_connection(const tcp_connection &) = delete;
 
     /**
      * @brief 移动构造函数
      */
-    TcpConnection(TcpConnection &&) = default;
+    tcp_connection(tcp_connection &&) = default;
 
     /**
      * @brief 析构函数
      */
-    ~TcpConnection() override = default;
+    ~tcp_connection() override = default;
 
     /**
      * @brief 禁止拷贝
      */
-    void operator=(const TcpConnection &) = delete;
+    void operator=(const tcp_connection &) = delete;
 
     /**
      * @brief 移动赋值
      */
-    TcpConnection &operator=(TcpConnection &&) = default;
+    tcp_connection &operator=(tcp_connection &&) = default;
 
 private:
     /**
@@ -69,6 +75,19 @@ private:
      */
     size_t consume();
 
+    /**
+     * @brief 生产可写数据
+     */
+    size_t produce();
+
+    /**
+     * @brief 创建环形缓冲区
+     *
+     * @param size 缓冲区大小，若为 0，则返回空的缓冲区
+     * @return 环形缓冲区对象指针
+     */
+    static cb create_cb(size_t size);
+
 protected:
     /**
      * @brief 读取数据处理函数
@@ -76,23 +95,30 @@ protected:
     virtual size_t on_read(const void *data, size_t size) = 0;
 
     /**
+     * @brief 写数据处理函数
+     */
+    virtual size_t on_write(void *data, size_t size) = 0;
+
+    /**
      * @brief 关闭连接处理函数
      */
     virtual void on_close() = 0;
 
 private:
-    CircularBufferPtr read_cb_{};  ///< 环形缓冲区对象指针
+    cb rcb_{};  ///< 读环形缓冲区对象指针
+    cb wcb_{};  ///< 写环形缓冲区对象指针
 };
 
-inline void TcpConnection::Deleter::operator()(
-    circular_buffer *cb) const noexcept {
+inline void tcp_connection::deleter::operator()(circular_buffer *cb) const noexcept {
     circular_buffer_destroy(cb);
 }
 
-inline TcpConnection::TcpConnection(int sock)
-    : TcpConnection{FileDescriptor(sock)} {}
+inline tcp_connection::tcp_connection(int sock, size_t rcb_size, size_t wcb_size)
+    : tcp_connection{file_descriptor(sock), rcb_size, wcb_size} {}
 
-inline TcpConnection::TcpConnection(FileDescriptor &&sock) noexcept
-    : EventDispatch::IoListener{std::move(sock)} {}
+inline tcp_connection::tcp_connection(file_descriptor &&sock, size_t rcb_size, size_t wcb_size)
+    : event_dispatch::io_listener{std::move(sock)},
+      rcb_{create_cb(rcb_size)},
+      wcb_{create_cb(wcb_size)} {}
 
 }  // namespace flyzero

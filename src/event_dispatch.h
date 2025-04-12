@@ -2,8 +2,10 @@
 
 #include <sys/epoll.h>
 
-#include <chrono>
 #include <cstring>
+
+#include <algorithm>
+#include <chrono>
 #include <queue>
 #include <system_error>
 #include <vector>
@@ -12,96 +14,96 @@
 
 namespace flyzero {
 
-class EventDispatch {
+class event_dispatch {
 public:
-    enum class Event : int { read = EPOLLIN, write = EPOLLOUT, read_write = EPOLLIN | EPOLLOUT };
+    enum class event : int { read = EPOLLIN, write = EPOLLOUT, read_write = EPOLLIN | EPOLLOUT };
 
-    class IoListener;
+    class io_listener;
 
-    struct LoopListener;
+    struct loop_listener;
 
-    struct TimeoutListener;
+    struct timeout_listener;
 
-    using TimePoint = std::chrono::steady_clock::time_point;
-    using TimeDuration = std::chrono::steady_clock::duration;
+    using time_point    = std::chrono::steady_clock::time_point;
+    using time_duration = std::chrono::steady_clock::duration;
 
 private:
     struct TimeoutListenerWrapper {
-        TimeoutListenerWrapper(TimeoutListener &listener, TimePoint now, TimeDuration interval);
+        TimeoutListenerWrapper(timeout_listener &listener, time_point now, time_duration interval);
 
         bool operator>(TimeoutListenerWrapper const &other) const noexcept;
 
-        TimeoutListener *listener_;
-        TimePoint deadline_;
-        TimeDuration interval_;
+        timeout_listener *listener_;
+        time_point        deadline_;
+        time_duration     interval_;
     };
 
-    using TimeoutListenerQueue = std::priority_queue<TimeoutListenerWrapper,
-                                                     std::vector<TimeoutListenerWrapper>,
-                                                     std::greater<TimeoutListenerWrapper>>;
+    using timeout_listener_queue = std::priority_queue<TimeoutListenerWrapper,
+                                                       std::vector<TimeoutListenerWrapper>,
+                                                       std::greater<TimeoutListenerWrapper>>;
 
 public:
     /**
      * @brief 构造函数
      */
-    EventDispatch();
+    event_dispatch();
 
     /**
      * @brief 禁止拷贝
      */
-    EventDispatch(const EventDispatch &) = delete;
+    event_dispatch(const event_dispatch &) = delete;
 
     /**
      * @brief 禁止赋值
      */
-    void operator=(const EventDispatch &) = delete;
+    void operator=(const event_dispatch &) = delete;
 
     /**
      * @brief 移动构造函数
      */
-    EventDispatch(EventDispatch &&) = default;
+    event_dispatch(event_dispatch &&) = default;
 
     /**
      * @brief 移动赋值
      */
-    EventDispatch &operator=(EventDispatch &&) = default;
+    event_dispatch &operator=(event_dispatch &&) = default;
 
     /**
      * @brief 析构函数
      */
-    ~EventDispatch() = default;
+    ~event_dispatch() = default;
 
     /**
      * @brief 注册 IO 事件监听器
      * @param listener 监听器
      * @param event 监听的事件
      */
-    void register_io_listener(IoListener &listener, Event event);
+    void register_io_listener(io_listener &listener, event event);
 
     /**
      * @brief 注销 IO 事件监听器
      * @param listener 监听器
      */
-    void unregister_io_listener(IoListener &listener);
+    void unregister_io_listener(io_listener &listener);
 
     /**
      * @brief 运行事件循环
      * @param listener 监听器
      */
-    void register_loop_listener(LoopListener &listener);
+    void register_loop_listener(loop_listener &listener);
 
     /**
      * @brief 注销事件循环
      * @param listener 监听器
      */
-    void unregister_loop_listener(LoopListener &listener);
+    void unregister_loop_listener(loop_listener &listener);
 
     /**
      * @brief 注册超时监听器
      * @param listener 监听器
      * @param timeout 超时时间
      */
-    void register_timeout_listener(TimeoutListener &listener, TimeDuration timeout);
+    void register_timeout_listener(timeout_listener &listener, time_duration timeout);
 
     /**
      * @brief 运行事件循环
@@ -125,22 +127,22 @@ protected:
      * @brief 处理超时事件
      * @param now 当前时间
      */
-    void on_timeout(TimePoint now);
+    void on_timeout(time_point now);
 
 private:
-    bool running_{false};                         ///< 是否正在运行
-    FileDescriptor epoll_fd_;                     ///< epoll 文件描述符
-    std::vector<LoopListener *> loop_listeners_;  ///< 循环监听器
-    TimeoutListenerQueue timeout_listeners_;      ///< 超时监听器队列
+    bool                         running_{false};     ///< 是否正在运行
+    file_descriptor              epoll_fd_;           ///< epoll 文件描述符
+    std::vector<loop_listener *> loop_listeners_;     ///< 循环监听器
+    timeout_listener_queue       timeout_listeners_;  ///< 超时监听器队列
 };
 
-class EventDispatch::IoListener {
+class event_dispatch::io_listener {
 public:
-    explicit IoListener(int fd);
+    explicit io_listener(int fd);
 
-    explicit IoListener(FileDescriptor &&fd) noexcept;
+    explicit io_listener(file_descriptor &&fd) noexcept;
 
-    virtual ~IoListener() = default;
+    virtual ~io_listener() = default;
 
     int fd() const noexcept;
 
@@ -149,68 +151,69 @@ public:
     virtual void on_write() = 0;
 
 private:
-    FileDescriptor fd_;  ///< 监听的文件描述符
+    file_descriptor fd_;  ///< 监听的文件描述符
 };
 
-struct EventDispatch::LoopListener {
-    virtual ~LoopListener() = default;
+struct event_dispatch::loop_listener {
+    virtual ~loop_listener() = default;
 
     virtual void on_loop() = 0;
 };
 
-struct EventDispatch::TimeoutListener {
-    virtual ~TimeoutListener() = default;
+struct event_dispatch::timeout_listener {
+    virtual ~timeout_listener() = default;
 
-    virtual bool on_timeout(TimePoint now) = 0;
+    virtual bool on_timeout(time_point now) = 0;
 };
 
-inline EventDispatch::TimeoutListenerWrapper::TimeoutListenerWrapper(TimeoutListener &listener,
-                                                                     TimePoint now,
-                                                                     TimeDuration interval)
+inline event_dispatch::TimeoutListenerWrapper::TimeoutListenerWrapper(timeout_listener &listener,
+                                                                      time_point        now,
+                                                                      time_duration     interval)
     : listener_{&listener}, deadline_{now + interval}, interval_{interval} {}
 
-inline bool EventDispatch::TimeoutListenerWrapper::operator>(
+inline bool event_dispatch::TimeoutListenerWrapper::operator>(
     TimeoutListenerWrapper const &other) const noexcept {
     return deadline_ > other.deadline_;
 }
 
-inline void EventDispatch::register_loop_listener(LoopListener &listener) {
+inline void event_dispatch::register_loop_listener(loop_listener &listener) {
     auto const it = std::find(loop_listeners_.begin(), loop_listeners_.end(), &listener);
     if (it == loop_listeners_.end()) {
         loop_listeners_.push_back(&listener);
     }
 }
 
-inline void EventDispatch::unregister_loop_listener(LoopListener &listener) {
+inline void event_dispatch::unregister_loop_listener(loop_listener &listener) {
     auto const it = std::find(loop_listeners_.begin(), loop_listeners_.end(), &listener);
     if (it != loop_listeners_.end()) {
         loop_listeners_.erase(it);
     }
 }
 
-inline void EventDispatch::register_timeout_listener(TimeoutListener &listener,
-                                                     TimeDuration interval) {
+inline void event_dispatch::register_timeout_listener(timeout_listener &listener,
+                                                      time_duration     interval) {
     auto const now = std::chrono::steady_clock::now();
     timeout_listeners_.emplace(listener, now, interval);
 }
 
-inline void EventDispatch::run_loop(std::chrono::milliseconds timeout) {
+inline void event_dispatch::run_loop(std::chrono::milliseconds timeout) {
     running_ = true;
     while (running_) {
         run_once(timeout);
     }
 }
 
-inline void EventDispatch::on_loop() {
+inline void event_dispatch::on_loop() {
     for (auto const listener : loop_listeners_) {
         listener->on_loop();
     }
 }
 
-inline EventDispatch::IoListener::IoListener(int fd) : fd_{fd} {}
+inline event_dispatch::io_listener::io_listener(int fd) : fd_{fd} {}
 
-inline EventDispatch::IoListener::IoListener(FileDescriptor &&fd) noexcept : fd_{std::move(fd)} {}
+inline event_dispatch::io_listener::io_listener(file_descriptor &&fd) noexcept
+    : fd_{std::move(fd)} {}
 
-inline int EventDispatch::IoListener::fd() const noexcept { return fd_.get(); }
+inline int event_dispatch::io_listener::fd() const noexcept { return fd_.get(); }
 
 }  // namespace flyzero

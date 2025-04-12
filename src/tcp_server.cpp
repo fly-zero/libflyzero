@@ -10,28 +10,31 @@
 
 namespace flyzero {
 
-void TcpServer::on_read(void) {
+void tcp_server::on_read(void) {
     while (true) {
         sockaddr_storage addr{};
-        socklen_t addrlen = sizeof addr;
-        FileDescriptor sock{::accept4(fd(), reinterpret_cast<sockaddr *>(&addr),
-                                      &addrlen, SOCK_NONBLOCK)};
+        socklen_t        addrlen = sizeof addr;
+        file_descriptor   sock{
+            ::accept4(fd(), reinterpret_cast<sockaddr *>(&addr), &addrlen, SOCK_NONBLOCK)};
 
-        if (sock)
+        if (sock) {
             on_accept(std::move(sock), addr, addrlen);
-        else if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        } else if (errno == EAGAIN || errno == EWOULDBLOCK) {
             break;
         } else {
-            throw utility::system_error(
-                errno, "accept4(%d, %p, %p, SOCK_NONBLOCK) failed: %s", fd(),
-                &addr, &addrlen, std::strerror(errno));
+            throw utility::system_error(errno,
+                                        "accept4(%d, %p, %p, SOCK_NONBLOCK) failed: %s",
+                                        fd(),
+                                        &addr,
+                                        &addrlen,
+                                        std::strerror(errno));
         }
     }
 }
 
-int TcpServer::listen(in_addr_t ip, uint16_t port) {
+int tcp_server::listen(in_addr_t ip, uint16_t port) {
     // 创建套接字
-    FileDescriptor sock(::socket(AF_INET, SOCK_STREAM, 0));
+    file_descriptor sock(::socket(AF_INET, SOCK_STREAM, 0));
     if (!sock) return -1;
 
     // 设置非阻塞
@@ -39,12 +42,11 @@ int TcpServer::listen(in_addr_t ip, uint16_t port) {
 
     // 绑定地址
     sockaddr_in addr{};
-    addr.sin_family = AF_INET;
+    addr.sin_family      = AF_INET;
     addr.sin_addr.s_addr = htonl(ip);
-    addr.sin_port = htons(port);
+    addr.sin_port        = htons(port);
 
-    auto err =
-        ::bind(sock.get(), reinterpret_cast<sockaddr *>(&addr), sizeof addr);
+    auto err = ::bind(sock.get(), reinterpret_cast<sockaddr *>(&addr), sizeof addr);
     if (err != 0) return -1;
 
     // 监听
@@ -54,9 +56,9 @@ int TcpServer::listen(in_addr_t ip, uint16_t port) {
     return sock.release();
 }
 
-int TcpServer::listen(const char *const unix_path) {
+int tcp_server::listen(const char *const unix_path) {
     // 创建套接字
-    FileDescriptor sock(::socket(AF_UNIX, SOCK_STREAM, 0));
+    file_descriptor sock(::socket(AF_UNIX, SOCK_STREAM, 0));
     if (!sock) return -1;
 
     // 设置非阻塞

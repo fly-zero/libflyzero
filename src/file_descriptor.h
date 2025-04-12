@@ -7,33 +7,33 @@
 
 namespace flyzero {
 
-class FileDescriptor {
+class file_descriptor {
 public:
     /**
      * @brief 默认构造函数
      */
-    constexpr FileDescriptor() = default;
+    constexpr file_descriptor() = default;
 
     /**
      * @brief 构造函数
      * @param fd 文件描述符
      */
-    explicit FileDescriptor(int fd) noexcept;
+    explicit file_descriptor(int fd) noexcept;
 
     /**
      * @brief 复制构造函数
      */
-    FileDescriptor(const FileDescriptor& other) noexcept;
+    file_descriptor(const file_descriptor& other) noexcept;
 
     /**
      * @brief 移动构造函数
      */
-    FileDescriptor(FileDescriptor&& other) noexcept;
+    file_descriptor(file_descriptor&& other) noexcept;
 
     /**
      * @brief 析构函数
      */
-    ~FileDescriptor() noexcept;
+    ~file_descriptor() noexcept;
 
     /**
      * @brief 获取文件描述符
@@ -53,10 +53,10 @@ public:
 
     /**
      * @brief 复制文件描述符
-     * @return FileDescriptor
+     * @return file_descriptor
      * 成功时，返回新的文件描述符；失败时，返回无效的文件描述符
      */
-    FileDescriptor clone() const noexcept;
+    file_descriptor clone() const noexcept;
 
     /**
      * @brief 设置文件描述符为非阻塞
@@ -72,67 +72,67 @@ public:
     /**
      * @brief 复制赋值
      */
-    FileDescriptor& operator=(const FileDescriptor& other) noexcept;
+    file_descriptor& operator=(const file_descriptor& other) noexcept;
 
     /**
      * @brief 移动赋值
      */
-    FileDescriptor& operator=(FileDescriptor&& other) noexcept;
+    file_descriptor& operator=(file_descriptor&& other) noexcept;
 
     /**
      * @brief 比较运算符
      */
-    bool operator<(const FileDescriptor& other) const noexcept;
+    bool operator<(const file_descriptor& other) const noexcept;
 
 private:
     int fd_{-1};  ///< 文件描述符
 };
 
-inline FileDescriptor::FileDescriptor(int const fd) noexcept : fd_(fd) {}
+inline file_descriptor::file_descriptor(int const fd) noexcept : fd_(fd) {}
 
-inline FileDescriptor::FileDescriptor(const FileDescriptor& other) noexcept
+inline file_descriptor::file_descriptor(const file_descriptor& other) noexcept
     : fd_{other.fd_ == -1 ? -1 : ::fcntl(other.fd_, F_DUPFD, 0)} {}
 
-inline FileDescriptor::FileDescriptor(FileDescriptor&& other) noexcept
+inline file_descriptor::file_descriptor(file_descriptor&& other) noexcept
     : fd_{std::exchange(other.fd_, -1)} {}
 
-inline FileDescriptor::~FileDescriptor() noexcept {
+inline file_descriptor::~file_descriptor() noexcept {
     if (fd_ >= 0) {
         ::close(fd_);
     }
 }
 
-inline int FileDescriptor::get() const noexcept { return fd_; }
+inline int file_descriptor::get() const noexcept { return fd_; }
 
-inline void FileDescriptor::close() noexcept {
+inline void file_descriptor::close() noexcept {
     ::close(fd_);
     fd_ = -1;
 }
 
-inline int FileDescriptor::release() noexcept { return std::exchange(fd_, -1); }
+inline int file_descriptor::release() noexcept { return std::exchange(fd_, -1); }
 
-inline FileDescriptor FileDescriptor::clone() const noexcept {
-    if (fd_ == -1) return FileDescriptor();
-    return FileDescriptor(::fcntl(fd_, F_DUPFD, 0));
+inline file_descriptor file_descriptor::clone() const noexcept {
+    if (fd_ == -1) return file_descriptor();
+    return file_descriptor(::fcntl(fd_, F_DUPFD, 0));
 }
 
-inline bool FileDescriptor::set_nonblocking() const noexcept {
+inline bool file_descriptor::set_nonblocking() const noexcept {
     if (fd_ < 0) return false;
     auto const ret = ::fcntl(fd_, F_GETFL);
     if (ret < 0) return false;
     return ::fcntl(fd_, F_SETFL, ret | O_NONBLOCK) == 0;
 }
 
-inline FileDescriptor::operator bool(void) const noexcept { return fd_ != -1; }
+inline file_descriptor::operator bool(void) const noexcept { return fd_ != -1; }
 
-inline FileDescriptor& FileDescriptor::operator=(const FileDescriptor& other) noexcept {
+inline file_descriptor& file_descriptor::operator=(const file_descriptor& other) noexcept {
     if (this != &other) [[likely]] {
         *this = other.clone();
     }
     return *this;
 }
 
-inline FileDescriptor& FileDescriptor::operator=(FileDescriptor&& other) noexcept {
+inline file_descriptor& file_descriptor::operator=(file_descriptor&& other) noexcept {
     if (this != &other) [[likely]] {
         if (fd_ >= 0) {
             ::close(fd_);
@@ -142,7 +142,7 @@ inline FileDescriptor& FileDescriptor::operator=(FileDescriptor&& other) noexcep
     return *this;
 }
 
-inline bool FileDescriptor::operator<(const FileDescriptor& other) const noexcept {
+inline bool file_descriptor::operator<(const file_descriptor& other) const noexcept {
     return fd_ < other.fd_;
 }
 
