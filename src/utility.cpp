@@ -4,9 +4,10 @@
 #include <cstdarg>
 
 namespace flyzero {
+namespace utility {
 
 std::system_error system_error(int err, const char* format, ...) {
-    char buf[4096];
+    char    buf[4096];
     va_list ap;
     va_start(ap, format);
     auto const ret [[maybe_unused]] = vsnprintf(buf, sizeof(buf), format, ap);
@@ -15,4 +16,5 @@ std::system_error system_error(int err, const char* format, ...) {
     return std::system_error{err, std::system_category(), buf};
 }
 
+}  // namespace utility
 }  // namespace flyzero
